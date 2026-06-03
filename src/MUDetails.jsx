@@ -1,123 +1,156 @@
 import { useState, useEffect } from 'react';
-// import { getWarEraClient } from './api.js'; // Pfad zu deiner api.js anpassen
+import { getWarEraClient } from './api.js'; 
 
 export default function MuDetails({ muId, onBack }) {
-  const [details, setDetails] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [mu, setMu] = useState(null);
+  const [members, setMembers] = useState([]);
+  const [loadingMu, setLoadingMu] = useState(true);
+  const [loadingMembers, setLoadingMembers] = useState(false);
 
   useEffect(() => {
-    const fetchMuDetails = async () => {
-      setLoading(true);
+    async function loadMuData() {
+      setLoadingMu(true);
       try {
-        // API-Call für die spezifischen Details einer einzelnen MU
-        // (Nutzt die muId, die beim Klicken übergeben wurde)
-        const res = await fetch(`https://api2.warera.io/military-units/details/${muId}`);
-        const data = await res.json();
-        setDetails(data);
+        const client = getWarEraClient();
+        const response = await client.mu.getById({ muId });
+        const data = response?.result?.data || response;
+        setMu(data);
       } catch (error) {
         console.error("Fehler beim Laden der MU-Details:", error);
       } finally {
-        setLoading(false);
+        setLoadingMu(false);
       }
-    };
-
-    fetchMuDetails();
+    }
+    if (muId) loadMuData();
   }, [muId]);
 
-  if (loading) {
-    return <p style={{ textAlign: 'center', color: 'var(--text-muted)' }}>MU-Profil wird geladen...</p>;
-  }
+  useEffect(() => {
+    async function loadMemberProfiles() {
+      if (!mu || !mu.members || mu.members.length === 0) return;
+      
+      setLoadingMembers(true);
+      const client = getWarEraClient();
+      const CACHE_DURATION = 6 * 60 * 60 * 1000; // 6 Stunden Cache für User-Profile
+      const now = Date.now();
 
-  if (!details) {
+      try {
+        const profilePromises = mu.members.map(async (userId) => {
+          const cacheKey = `user_cache_${userId}`;
+          const cached = localStorage.getItem(cacheKey);
+
+          if (cached) {
+            const { data, timestamp } = JSON.parse(cached);
+            if (now - timestamp < CACHE_DURATION) return data;
+          }
+
+          try {
+            // Hier nutzen wir den passenden API-Call für User (ggf. an deinen Client anpassen)
+            const response = await client.user.getUserLite({ userId });
+            const userData = response?.result?.data || response;
+
+            const formattedUser = {
+              _id: userId,
+              username: userData.username || "Unbekannter Soldat",
+              avatarUrl: userData.avatarUrl || null,
+              weeklyDamage: userData.rankings?.weeklyUserDamages?.value || 0
+            };
+
+            localStorage.setItem(cacheKey, JSON.stringify({ data: formattedUser, timestamp: now }));
+            return formattedUser;
+          } catch {
+            return { _id: userId, username: `User (${userId.substring(0,4)})`, avatarUrl: null, weeklyDamage: 0 };
+          }
+        });
+
+        const profiles = await Promise.all(profilePromises);
+        
+        // Sortiert die Mitglieder direkt nach dem höchsten wöchentlichen Schaden
+        profiles.sort((a, b) => b.weeklyDamage - a.weeklyDamage);
+        setMembers(profiles);
+      } catch (error) {
+        console.error("Fehler beim Laden der Member-Profile:", error);
+      } finally {
+        setLoadingMembers(false);
+      }
+    }
+
+    if (mu) loadMemberProfiles();
+  }, [mu]);
+
+  if (loadingMu) {
+    return <p style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>MU-Spezifikationen werden geladen...</p>;  }
+
+  if (!mu) {
     return (
-      <div>
-        <button className="back-btn" onClick={onBack}>← Zurück</button>
-        <p style={{ textAlign: 'center', color: 'red' }}>Fehler beim Laden der Daten oder MU existiert nicht.</p>
+      <div style={{ textAlign: 'center', padding: '40px' }}>
+        <p style={{ color: 'var(--text-muted)' }}>Militärische Einheit nicht gefunden.</p>
+        <button className="update-btn" onClick={onBack}>Zurück</button>
       </div>
     );
   }
 
   return (
     <div className="mu-detail-view">
-      {/* Zurück-Button */}
-      <button className="back-btn" onClick={onBack}>← Zurück zur Übersicht</button>
-
-      {/* Identität / Header */}
+      {/* Header-Bereich */}
       <div className="detail-header">
-        <h2>{details.name || "Unbekannte MU"}</h2>
-        <p style={{ color: 'var(--text-muted)', margin: 0 }}>
-          {details.description || "Keine Beschreibung hinterlegt."}
-        </p>
+        <button className="back-arrow-btn" onClick={onBack}>← Zurück zum Dashboard</button>
+        <div className="detail-title-wrapper">
+          {mu.avatarUrl && <img src={mu.avatarUrl} alt="" className="detail-mu-logo" />}
+          <div>
+            <h1>{mu.name}</h1>
+            <p className="detail-subtitle">ID: {mu._id}</p>
+          </div>
+        </div>
       </div>
 
-      {/* Dashboard Grid (Kommandeure & Finanzen/Items) */}
-      <div className="detail-grid">
+      {/* Haupt-Statistiken der MU */}
+      <div className="detail-stats-grid">
+        <div className="detail-stat-card">
+          <span className="stat-label">Gesamtschaden</span>
+          <span className="stat-value">⚔️ {(mu.rankings?.muDamages?.value || 0).toLocaleString('de-DE')}</span>
+        </div>
+        <div className="detail-stat-card">
+          <span className="stat-label">Wöchentlicher Schaden</span>
+          <span className="stat-value">📈 {(mu.rankings?.muWeeklyDamages?.value || 0).toLocaleString('de-DE')}</span>
+        </div>
+        <div className="detail-stat-card">
+          <span className="stat-label">Mitgliederstärke</span>
+          <span className="stat-value">👥 {mu.members?.length || 0} Mann</span>
+        </div>
+      </div>
+
+      {/* Die Mitgliederliste */}
+      <div className="member-list-section">
+        <h2>Aktive Truppenstärke ({mu.members?.length || 0})</h2>
         
-        {/* KACHEL 1: Führungsebene */}
-        <div className="detail-card">
-          <h3>👑 Führungsebene</h3>
-          <div className="leader-row">
-            <span>{details.commanderName || 'Keiner'}</span>
-            <span className="rank-badge" style={{color: 'var(--accent-gold)'}}>Commander</span>
-          </div>
-          {details.viceCommanders?.map((vice, index) => (
-            <div className="leader-row" key={index}>
-              <span>{vice.name}</span>
-              <span className="rank-badge">2IC</span>
-            </div>
-          ))}
-        </div>
-
-        {/* KACHEL 2: Schatzkammer & Items */}
-        <div className="detail-card">
-          <h3>💰 Finanzen & Lager</h3>
-          <p style={{ margin: '0 0 15px 0' }}>
-            Budget: <strong style={{color: '#22c55e'}}>{details.budget?.toLocaleString('de-DE')} CC</strong>
-          </p>
-          
-          {/* Item Grid */}
-          <div className="items-container">
-            {details.inventory && Object.keys(details.inventory).length > 0 ? (
-              Object.keys(details.inventory).map((itemName) => (
-                <div className="item-box" key={itemName}>
-                  <span style={{ fontSize: '1.2rem' }}>📦</span>
-                  <span className="item-qty">{details.inventory[itemName]}x</span>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '2px' }}>{itemName}</div>
+        {loadingMembers ? (
+          <p style={{ color: 'var(--text-muted)', padding: '10px 0' }}>Akten der Soldaten werden angefordert...</p>
+        ) : (
+          <div className="members-grid">
+            {members.map((member) => (
+              <div key={member._id} className="member-card">
+                {/* Profilbild links */}
+                <div className="member-avatar-wrapper">
+                  {member.avatarUrl ? (
+                    <img src={member.avatarUrl} alt="" className="member-avatar" />
+                  ) : (
+                    <div className="member-avatar-placeholder">
+                      {member.username.substring(0,2).toUpperCase()}
+                    </div>
+                  )}
                 </div>
-              ))
-            ) : (
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: 0 }}>Das Lager ist leer.</p>
-            )}
-          </div>
-        </div>
 
-      </div>
-
-      {/* BEREICH 3: Mitgliederliste */}
-      <div className="detail-card">
-        <h3>👥 Truppenmitglieder ({details.members?.length || 0})</h3>
-        <table className="mu-table">
-          <thead>
-            <tr style={{ borderBottom: '2px solid var(--border-color)', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-              <th style={{ padding: '10px 20px', textAlign: 'left' }}>Name</th>
-              <th style={{ padding: '10px 20px', textAlign: 'right' }}>Rang / Rolle</th>
-              <th style={{ padding: '10px 20px', textAlign: 'right' }}>Schaden beigetragen</th>
-            </tr>
-          </thead>
-          <tbody>
-            {details.members?.map((member) => (
-              <tr key={member.id} className="mu-row" style={{ cursor: 'default' }}>
-                <td className="mu-cell cell-name">{member.name}</td>
-                <td className="mu-cell" style={{ textAlign: 'right', color: 'var(--text-muted)' }}>
-                  {member.role || 'Soldat'}
-                </td>
-                <td className="mu-cell" style={{ textAlign: 'right', fontWeight: '600' }}>
-                  ⚔️ {member.damageContribution?.toLocaleString('de-DE') || 0}
-                </td>
-              </tr>
+                {/* Name & Schaden rechts daneben */}
+                <div className="member-info">
+                  <span className="member-name">{member.username}</span>
+                  <span className="member-damage">
+                    ⚔️ {member.weeklyDamage.toLocaleString('de-DE')} <span className="dmg-label">/ Woche</span>
+                  </span>
+                </div>
+              </div>
             ))}
-          </tbody>
-        </table>
+          </div>
+        )}
       </div>
     </div>
   );

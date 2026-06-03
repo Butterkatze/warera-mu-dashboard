@@ -28,17 +28,53 @@ function App() {
 
   const fetchArticleAndMu = useCallback(async () => {
     setLoading(true);
-    let extractedMuIds = [];
+    //let extractedMuIds = [];
 
     try {
 
-       
+        //Artikel  aus Warera holen und IDs lesen
         const client = getWarEraClient();
-
-         // 1. Artikel  aus Warera holen und IDs lesen
         const articleData = await client.article.getArticleById({ articleId: ARTICLE_ID });
-        const text = articleData.content;
+        const text = articleData.content || "";
+
+        // Divisions Namen Parser
         
+        const parts = text.split(/<h2[^>]*>/);
+      
+        const tempGroupedIds = {};
+        
+        parts.forEach((part, index) => {
+        // Der erste Teil vor dem ersten <h2> hat keine Überschrift
+        if (index === 0) return; 
+        
+        // Extrahiere den Divisionsnamen (alles bis zum schließenden </h2>)
+        const nameMatch = part.match(/([^<]+)<\/h2>/);
+        if (!nameMatch) return;
+        
+        const divisionName = nameMatch[1].trim();
+        tempGroupedIds[divisionName] = [];
+
+          // MU ID Parser 
+          const muRegex = /muId&quot;:&quot;([a-f0-9]{24})/g;
+          let match;
+          while ((match = muRegex.exec(part)) !== null) {
+          tempGroupedIds[divisionName].push(match[1]);
+          }
+        });
+
+        // Leere Divisionen filtern
+        Object.keys(tempGroupedIds).forEach(key => {
+          if (tempGroupedIds[key].length === 0) delete tempGroupedIds[key];
+        });
+
+        if (Object.keys(tempGroupedIds).length === 0) {
+          setMuData({});
+          setLoading(false);
+          return;
+        }
+
+
+        /*
         const muRegex = /muId&quot;:&quot;([a-f0-9]{24})/g;
         let match;
         while ((match = muRegex.exec(text)) !== null) {
@@ -52,56 +88,62 @@ function App() {
         }
 
 
-
+        
         /* *********************************************************************************************************** */
         // MU Daten holen
 
         const CACHE_DURATION = 2 * 60 * 60 * 1000; // 2 Stunden
         const now = Date.now();
+        const finalGroupedData = {};
 
-        // Für jede ID ein Promise erstellen
-        const muDataPromises = extractedMuIds.map(async (id) => {
+        // 3. Für jede Division die MUs parallel laden
+      for (const [divisionName, ids] of Object.entries(tempGroupedIds)) {
+        const muDataPromises = ids.map(async (id) => {
           const cacheKey = `mu_cache_${id}`;
           const cached = localStorage.getItem(cacheKey);
 
           if (cached) {
             const { data, timestamp } = JSON.parse(cached);
             if (now - timestamp < CACHE_DURATION) {
-              return data; // Aus dem Cache laden
+
+              return data; 
             }
           }
 
           try {
-            // Live-Abfrage über das SDK (wird durch Promise.all automatisch gebatched!)
             const response = await client.mu.getById({ muId: id });
+            // Absicherung gegen unterschiedliche API-Response-Strukturen
             const freshData = response?.result?.data || response;
+            
+            // Falls das SDK die ID umschreibt, stellen wir sicher dass _id existiert
+            const formattedData = {
+              ...freshData,
+              _id: freshData._id || freshData.id || id
+            };
 
             localStorage.setItem(cacheKey, JSON.stringify({
-              data: freshData,
+              data: formattedData,
               timestamp: now
             }));
 
-            return freshData;
-          } catch  {
-            return { _id: id, name: `Fehler beim Laden (${id.substring(0,4)})`, members: [] };
+            return formattedData;
+          } catch {
+            return { _id: id, name: `Fehler beim Laden (${id.substring(0,4)})`, members: [], memberCount: 0, totalDamage: 0 };
           }
         });
 
-        // Alle Promises parallel auflösen (SDK fasst sie zusammen)
-        const resolvedMus = await Promise.all(muDataPromises);
-
-      
-        // Daten für die UI gruppieren
-        setMuData({
-          "Alle Militäreinheiten": resolvedMus
-        });
-
-      } catch (error) {
-        console.error("Fehler beim Laden der Daten:", error);
-      } finally {
-        setLoading(false);
+        finalGroupedData[divisionName] = await Promise.all(muDataPromises);
       }
-    }, []);
+
+      setMuData(finalGroupedData);
+
+
+    } catch (error) {
+      console.error("Fehler beim Laden der Daten:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
       /*
 
@@ -132,17 +174,33 @@ function App() {
 
   // Kein Plan was hier läuft aber der Linter rastet sonst aus
   useEffect(() => {
-    // Verpackt den Aufruf in einen asynchronen Makrotask (0 Millisekunden Verzögerung) 
     const timer = setTimeout(() => {
       fetchArticleAndMu();
-    }, 0);
-  
-    // Sauberes Aufräumen, falls die Komponente unmountet
+    }, 1);
     return () => clearTimeout(timer);
   }, [fetchArticleAndMu]);
 
-
-
+  
+  useEffect(() => {
+    // Der Hook läuft immer, aber wir tun NUR etwas, wenn selectedMuId existiert
+    if (!selectedMuId) return;
+  
+    // Wir pushen einen virtuellen Zustand in den Verlauf
+    window.history.pushState({ detailOpen: true }, "");
+  
+    // Funktion, die anspringt, wenn der User "Zurück" drückt
+    const handlePopState = () => {
+      setSelectedMuId(null);
+    };
+  
+    // Event-Listener für die Zurück-Taste registrieren
+    window.addEventListener("popstate", handlePopState);
+  
+    // Aufräumen, wenn selectedMuId sich ändert oder die Komponente unmountet
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [selectedMuId]); // Der Hook triggert jedes Mal, wenn sich die ID ändert
 
   useEffect(() => {
     try {
@@ -151,15 +209,17 @@ function App() {
     }
   }, [apiKey]);
 
+
+/**      ***************************************************************************                        */
+
   // WENN EINE ID GEWÄHLT IST: Zeige die Detail-Komponente anstatt der Übersicht
   if (selectedMuId) {
     return (
       <div className="container">
-        <MuDetails muId={selectedMuId} onBack={() => setSelectedMuId(null)} />
+        <MuDetails muId={selectedMuId} onBack={() => window.history.back()} />
       </div>
     );
   }
-
 
   return (
     <div className="container">
@@ -181,7 +241,7 @@ function App() {
         <div>
           <h1>Deutsche Military Units</h1>
           <p style={{ color: 'var(--text-muted)', margin: '5px 0 0 0' }}>
-            Offizielle Einstufung der Bundesrepublik (Live-Daten)
+            Offizielle MU Einstufung der Bundesrepublik 
           </p>
         </div>
         <button className="update-btn" onClick={fetchArticleAndMu} disabled={loading}>
@@ -195,51 +255,76 @@ function App() {
           <p style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Daten werden geladen...</p>
         ) : Object.keys(muData).length === 0 ? (
           <p style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
-            Keine MUs gefunden. Überprüfe die Artikel-ID und den Inhalt.
+            Keine MUs gefunden. Gib ein API-Key ein und überprüfe die Artikel-ID und den Inhalt.
           </p>
         ) : (
-          // SCHLEIFE START: Läuft durch alle gefundenen Divisionen
-          Object.keys(muData).map((divisionName) => {
-            
-            // HIER IST DIE NEUE FLEXIBLE KLASSIFIZIERUNG:
-            // Macht aus "[Division 1]" -> "division-1" oder aus "[Ausbildung]" -> "ausbildung"
-            const cssSafeName = divisionName
-              .toLowerCase()
-              .replace(/[^a-z0-9]/g, '-')
-              .replace(/-+/g, '-')
-              .trim();
+          /* HIER REINGEKOMMEN: Das Grid-Layout umschließt nun alle Sektionen */
+          <div className="dashboard-grid">
+            {Object.keys(muData).map((divisionName) => {
+              const cssSafeName = divisionName
+                .toLowerCase()
+                .replace(/[^a-z0-9]/g, '-')
+                .replace(/-+/g, '-')
+                .trim();
 
-            const divisionClass = `division-section ${cssSafeName}`;
+              const divisionClass = `division-section ${cssSafeName}`;
 
-            return (
-              <section key={divisionName} className={divisionClass}>
-                <h2 className="division-title">{divisionName}</h2>
-                <table className="mu-table">
-                  <tbody>
-                    {muData[divisionName].map((mu) => (
-                      <tr 
-                        key={mu.id} 
-                        className="mu-row" 
-                        onClick={() => handleMuClick(mu.id)}
-                      >
-                        <td className="mu-cell cell-logo">
-                          <div className="mu-logo-placeholder">
-                            {mu.name ? mu.name.substring(0, 2).toUpperCase() : 'MU'}
-                          </div>
-                        </td>
-                        <td className="mu-cell cell-name">{mu.name}</td>
-                        <td className="mu-cell cell-stats">👥 {mu.memberCount} Mitglieder</td>
-                        <td className="mu-cell cell-stats">
-                          ⚔️ {mu.totalDamage?.toLocaleString('de-DE')} DMG
-                        </td>
-                        <td className="mu-cell cell-action">➔</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </section>
-            );
-          })
+              return (
+                <section key={divisionName} className={divisionClass}>
+                  <h2 className="division-title">{divisionName}</h2>
+                  <table className="mu-table">
+                    <tbody>
+                      {muData[divisionName].map((mu) => (
+                        <tr 
+                          key={mu._id} 
+                          className="mu-row" 
+                          onClick={() => handleMuClick(mu._id)}
+                        >
+                          {/* LOGO ZELLE */}
+                          <td className="mu-cell cell-logo" style={{ paddingRight: 0 }}>
+                            {mu.avatarUrl ? (
+                              <img 
+                                src={mu.avatarUrl} 
+                                alt={`${mu.name} Logo`}
+                                className="mu-logo-img"
+                                onError={(e) => {
+                                  // Fallback, falls das Bild auf dem WarEra-Server mal nicht lädt
+                                  e.target.style.display = 'none';
+                                  if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
+                                }}
+                              />
+                            ) : null}
+
+                            {/* Fallback */}
+                            <div 
+                              className="mu-logo-placeholder" 
+                              style={{ 
+                                display: mu.avatarUrl ? 'none' : 'flex',
+                                width: '32px', 
+                                height: '32px', 
+                                fontSize: '0.8rem' 
+                              }}
+                            >
+                              {mu.name ? mu.name.substring(0, 2).toUpperCase() : 'MU'}
+                            </div>
+                          </td>
+                              {/* NAME ZELLE */}
+                          <td className="mu-cell cell-name">{mu.name}</td>
+                              {/* STATS ZELLE */}
+                          <td className="mu-cell cell-stats">
+                            <div>👥 {mu.memberCount || mu.members?.length || 0}</div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                              ⚔️ {(mu.totalDamage || 0).toLocaleString('de-DE')}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </section>
+              );
+            })}
+          </div>
         )}
       </main>
     </div>

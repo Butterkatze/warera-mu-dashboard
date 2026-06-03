@@ -7,22 +7,6 @@
   --accent-blue: #3b82f6;
   --border-color: #334155;
 }
-/* ********************************************************************************************************************************* */
-
-/* Spezifische Farbe für [Division 1] im Artikel */
-.division-section.division-1 .division-title {
-  color: var(--accent-gold);
-  border-left: 4px solid var(--accent-gold);
-}
-
-/* Spezifische Farbe für [Ausbildung] im Artikel */
-.division-section.ausbildung .division-title {
-  color: #a855f7;
-  border-left: 4px solid #a855f7;
-}
-
-/* ********************************************************************************************************************************* */
-
 
 body {
   background-color: var(--bg-color);
@@ -84,7 +68,25 @@ h1 {
   align-items: center;
 }
 
-/* Dynamische Klassen für die Division-Farben */
+/* ********************************************************************************************************************************* */
+
+/* Das gilt jetzt für JEDE Division standardmäßig */
+.division-title {
+  background-color: rgba(0, 0, 0, 0.2);
+  padding: 15px 20px;
+  margin: 0;
+  font-size: 1.25rem;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  
+  /* HIER: Standardmäßig kriegt jede Box einen blauen Akzent */
+  color: var(--accent-blue);
+  border-left: 4px solid var(--accent-blue);
+}
+
+/* Dynamische CSS-Klassen basierend auf dem Namen aus dem Artikel */
+.division-section.division-1 .division-title,
 .division-section.elite .division-title {
   color: var(--accent-gold);
   border-left: 4px solid var(--accent-gold);
@@ -94,6 +96,30 @@ h1 {
   color: #a855f7;
   border-left: 4px solid #a855f7;
 }
+
+
+/* ********************************************************************************************************************************* */
+/* Dashboard  (glaube ich)*/
+
+.dashboard-grid {
+  display: grid;
+  /* Erstellt automatisch Spalten, die mindestens 280px breit sind, maximal gleich groß (1fr) */
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+  align-items: start;
+  width: 100%;
+}
+
+.division-section {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 0; 
+  display: flex;
+  flex-direction: column;
+}
+
 
 .mu-table {
   width: 100%;
@@ -115,13 +141,25 @@ h1 {
 }
 
 .mu-cell {
-  padding: 15px 20px;
+  padding: 12px 10px;
   text-align: left;
   vertical-align: middle;
 }
 
+.mu-logo-img {
+  width: 24px;         
+  height: 24px;       
+  border-radius: 4px;  
+  object-fit: cover;  
+  border: 1px solid var(--border-color);
+  background-color: rgba(255, 255, 255, 0.05);
+  display: block;
+}
+
 .cell-logo {
-  width: 50px;
+  width: 32px;         
+  min-width: 32px;     
+  vertical-align: middle;
 }
 
 .mu-logo-placeholder {
@@ -136,13 +174,18 @@ h1 {
 }
 
 .cell-name {
+  font-size: 0.95rem; /* Leicht verkleinert für Spalten */
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-weight: 600;
-  font-size: 1.1rem;
 }
 
 .cell-stats {
   color: var(--text-muted);
-  font-size: 0.95rem;
+  font-size: 0.85rem;
+  padding-left: 0;
   text-align: right;
 }
 
@@ -153,17 +196,20 @@ h1 {
   font-size: 1.2rem;
 }
 
-/* Das Grunddesign für alle Sektionen */
-.division-section {
-  background-color: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  margin-bottom: 25px;
-  overflow: hidden;
-}
+
+
 /* ********************************************************************************************************************************* */
 
 /* --- DETAILANSICHT STYLES --- */
+
+/* Container-Design der Detailseite */
+.mu-detail-view {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 25px;
+  margin-top: 10px;
+}
 
 .back-btn {
   background-color: transparent;
@@ -184,9 +230,46 @@ h1 {
 }
 
 .detail-header {
-  margin-bottom: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
   border-bottom: 1px solid var(--border-color);
   padding-bottom: 20px;
+  margin-bottom: 25px;
+}
+
+.back-arrow-btn {
+  background: none;
+  border: none;
+  color: var(--accent-blue);
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0;
+  text-align: left;
+  width: fit-content;
+}
+
+.back-arrow-btn:hover {
+  text-decoration: underline;
+}
+
+.detail-title-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.detail-mu-logo {
+  width: 50px;
+  height: 50px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.detail-subtitle {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin: 3px 0 0 0;
 }
 
 .detail-header h2 {
@@ -208,7 +291,115 @@ h1 {
       grid-template-columns: 1fr 1fr;
   }
 }
+/* MU-Statistik-Karten oben */
+.detail-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-bottom: 35px;
+}
 
+.detail-stat-card {
+  background-color: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.stat-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.stat-value {
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+/* Soldaten/User-Grid (Auflistung unten) */
+.member-list-section h2 {
+  font-size: 1.3rem;
+  margin-bottom: 15px;
+  border-bottom: 2px solid var(--border-color);
+  padding-bottom: 8px;
+}
+
+.members-grid {
+  display: grid;
+  /* Packt Soldaten flexibel nebeneinander */
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+/* Die einzelne Soldaten-Karte */
+.member-card {
+  background-color: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.member-card:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  transform: translateY(-2px);
+}
+
+/* Avatare der Soldaten */
+.member-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%; /* Runde Avatare für die User */
+  border: 1px solid var(--border-color);
+  object-fit: cover;
+}
+
+.member-avatar-placeholder {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+/* Info-Texte der Soldaten */
+.member-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.member-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.member-damage {
+  font-size: 0.85rem;
+  color: var(--accent-gold);
+}
+
+.dmg-label {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+/* jhfsdhjkdfsjkhfd*/
 .detail-card {
   background-color: var(--card-bg);
   border: 1px solid var(--border-color);
