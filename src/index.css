@@ -86,7 +86,7 @@ h1 {
 }
 
 /* Dynamische CSS-Klassen basierend auf dem Namen aus dem Artikel */
-.division-section.division-1 .division-title,
+.division-section.division-xy .division-title,
 .division-section.elite .division-title {
   color: var(--accent-gold);
   border-left: 4px solid var(--accent-gold);
@@ -434,25 +434,10 @@ h1 {
   font-weight: bold;
 }
 
-/* Item Lager */
-.items-container {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-  gap: 10px;
-}
 
-.item-box {
-  background-color: #121824;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  padding: 10px;
-  text-align: center;
-  font-size: 0.85rem;
-}
-
-.item-qty {
-  display: block;
-  font-weight: bold;
-  color: var(--accent-gold);
-  margin-top: 5px;
+.click-profile-link:hover {
+  cursor: pointer;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease-in-out;
 }

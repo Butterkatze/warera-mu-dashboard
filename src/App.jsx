@@ -9,6 +9,140 @@ import MuDetails from './MuDetails';
 const ARTICLE_ID = '6a1f025b37df43a8d01bb9a2'; 
 // ==========================================
 
+
+
+//Token-Checker
+function  Settings({ apiKey, setApiKey }) {
+  const [isEditing, setIsEditing] = useState(!apiKey);
+  const [status, setStatus] = useState({ type: '', message: '' });
+
+  const handleValidateKey = async (e) => {
+    e.preventDefault();
+    const cleanKey = apiKey.trim();
+
+    const warEraKeyRegex = /^wae_[0-9a-f]{64}$/; 
+    
+    if (!cleanKey) {
+      setStatus({ type: 'error', message: 'Bitte gib einen API-Token ein.' });
+      return;
+    }
+
+    if (!warEraKeyRegex.test(cleanKey)) {
+      setStatus({ type: 'error', message: 'Falsches Format.' });
+      return;
+    }
+    
+
+    setStatus({ type: 'loading', message: '...' });
+
+    try {
+      localStorage.setItem('warera_api_key', cleanKey);
+      const client = getWarEraClient();
+
+      // Test-Call an einen existierenden Endpunkt
+      await client.article.getArticleById({ articleId: ARTICLE_ID });
+
+      setStatus({ type: 'success', message: '✓' });
+
+      setTimeout(() => {
+        setIsEditing(false);
+        setStatus({ type: '', message: '' });
+      }, 1000);
+
+    } catch (error) {
+      console.error(error);
+      localStorage.removeItem('warera_api_key');
+      setStatus({ type: 'error', message: 'Ungültig!' });
+    }
+  };
+    return (
+      <div style={{ position: 'relative', background: 'var(--bg-color)', padding: '15px', borderRadius: '6px', marginBottom: '20px' }}>
+        
+        {/* Toggle-Button oben rechts */}
+        {!isEditing && (
+          <button 
+            onClick={() => setIsEditing(true)} 
+            style={{ position: 'absolute', top: '12px', right: '15px', background: 'none', border: 'none', color: 'var(--text-muted, #888)', cursor: 'pointer', fontSize: '1rem' }}
+            title="API-Key bearbeiten"
+          >
+            ⚙️
+          </button>
+        )}
+  
+        {isEditing ? (
+          <div>
+            <label style={{ fontSize: '0.85rem', color: 'var(--text-muted, #aaa)', display: 'block', marginBottom: '5px' }}>
+              API-Token
+            </label>
+            <form onSubmit={handleValidateKey} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <input
+                type="password"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                placeholder="wae_..."
+                style={{
+                  flex: 1,
+                  padding: '6px 10px',
+                  borderRadius: '4px',
+                  border: '1px solid var(--border-color, #444)',
+                  background: 'var(--bg-input, #111)',
+                  color: 'var(--text-main, #fff)',
+                  fontSize: '0.9rem'
+                }}
+              />
+              <button 
+                type="submit" 
+                disabled={status.type === 'loading'}
+                style={{
+                  padding: '6px 12px',
+                  background: status.type === 'success' ? '#2ec4b6' : 'var(--accent-blue, #007bff)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '4px',
+                  fontSize: '0.85rem',
+                  fontWeight: '600',
+                  cursor: 'pointer'
+                }}
+              >
+                {status.type === 'loading' ? 'Prüfe...' : 'Check'}
+              </button>
+  
+              {/* Kleiner Haken/Pfeil zum manuellen Abbrechen (nur wenn schon ein Key existiert) */}
+              {apiKey && (
+                <button 
+                  type="button" 
+                  onClick={() => { setIsEditing(false); setStatus({ type: '', message: '' }); }}
+                  style={{ background: 'none', border: 'none', color: '#777', cursor: 'pointer', fontSize: '0.85rem' }}
+                >
+                  ▲
+                </button>
+              )}
+            </form>
+  
+            {status.message && (
+              <span style={{ 
+                display: 'block',
+                marginTop: '5px', 
+                fontSize: '0.8rem', 
+                color: status.type === 'success' ? '#2ec4b6' : '#e74c3c',
+                fontWeight: '600'
+              }}>
+                {status.message}
+              </span>
+            )}
+          </div>
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: '#2ec4b6' }}>
+            <span>🔒 API-Token aktiv</span>
+            <span style={{ animation: 'fadeIn 0.5s' }}>✓</span>
+          </div>
+        )}
+      </div>
+    );
+}
+
+
+
 function App() {
   const [muData, setMuData] = useState({}); // Speichert die fertigen MU-Objekte für die UI
   const [loading, setLoading] = useState(true);
@@ -21,10 +155,6 @@ function App() {
       return "";
     }
   });
-
-
-
-
 
   const fetchArticleAndMu = useCallback(async () => {
     setLoading(true);
@@ -145,31 +275,10 @@ function App() {
     }
   }, []);
 
-      /*
-
-      // 3. Struktur für die UI aufbauen
-      // Da das tRPC-HTML keine [Divisionen] mehr als reinen Text liefert,
-      // mappen wir die IDs zu Objekten, die deine UI (wie zuvor) erwarten könnte.
-      const grouped = {
-        "Alle MUs": extractedMuIds.map(id => ({
-          id: id,
-          name: `Militäreinheit (ID: ${id.substring(0, 6)}...)` // Temporärer Name, bis die Details geladen werden
-        }))
-      };
-
-      setMuData(grouped);
-    } catch (error) {
-      console.error("Fehler beim Laden:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  */
-
   const handleMuClick = (muId) => {
     setSelectedMuId(muId); // Setzt die ID der angeklickten Einheit
   };
+
 
 
   // Kein Plan was hier läuft aber der Linter rastet sonst aus
@@ -224,17 +333,7 @@ function App() {
   return (
     <div className="container">
       {/* ===== API KEY EINSTELLUNG ===== */}
-    <div style={{ padding: '15px', background: 'var(--card-bg)', borderRadius: '5px', marginBottom: '20px' }}>
-      <label style={{ color: 'var(--accent-blue)', marginRight: '10px' }}>WarEra API-Key:</label>
-      <input
-        type="password" 
-        value={apiKey}
-        onChange={(e) => setApiKey(e.target.value)}
-        placeholder="Hier API-Key einfügen..."
-        style={{ padding: '5px', width: '300px', borderRadius: '3px', border: '1px solid solid var(--border-color)' }}
-      />
-      {apiKey && <span style={{ color: 'var(--accent-gold)', marginLeft: '10px' }}>✓ Aktiv</span>}
-    </div>
+      <Settings apiKey={apiKey} setApiKey={setApiKey} />
 
       {/* Header */}
       <header>
@@ -255,7 +354,7 @@ function App() {
           <p style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Daten werden geladen...</p>
         ) : Object.keys(muData).length === 0 ? (
           <p style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
-            Keine MUs gefunden. Gib ein API-Key ein und überprüfe die Artikel-ID und den Inhalt.
+            Keine MUs gefunden. Gib ein API-Key ein.
           </p>
         ) : (
           /* HIER REINGEKOMMEN: Das Grid-Layout umschließt nun alle Sektionen */
@@ -314,7 +413,7 @@ function App() {
                           <td className="mu-cell cell-stats">
                             <div>👥 {mu.memberCount || mu.members?.length || 0}</div>
                             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                              ⚔️ {(mu.totalDamage || 0).toLocaleString('de-DE')}
+                            <span>⚔️ {mu.rankings?.muWeeklyDamages?.value?.toLocaleString('de-DE')}</span>
                             </div>
                           </td>
                         </tr>
