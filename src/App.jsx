@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import './index.css';
 import { getWarEraClient } from './api.js'; // Pfad zu deiner api.js anpassen
-import MuDetails from './MuDetails';
+import MuDetails from './MUDetails.jsx';
 
 // ==========================================
 // KONFIGURATION - HIER EINFACH ANPASSEN
