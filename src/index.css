@@ -1,443 +1,123 @@
+/* ==========================================================================
+   Basic Stuff für alle Komponenten
+   ========================================================================== */
 :root {
-  --bg-color: #121824;
-  --card-bg: #1e293b;
-  --text-color: #f8fafc;
-  --text-muted: #94a3b8;
-  --accent-gold: #f59e0b;
-  --accent-blue: #3b82f6;
-  --border-color: #334155;
-}
-
-body {
-  background-color: var(--bg-color);
-  color: var(--text-color);
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  margin: 0;
-  padding: 20px;
-}
-
-.container {
-  max-width: 1000px;
-  margin: 0 auto;
-}
-
-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 2px solid var(--border-color);
-  padding-bottom: 20px;
-  margin-bottom: 30px;
-}
-
-h1 {
-  margin: 0;
-  font-size: 2rem;
-}
-
-.update-btn {
-  background-color: var(--accent-blue);
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 5px;
-  cursor: pointer;
-  font-weight: bold;
-  transition: background 0.2s;
-}
-
-.update-btn:hover {
-  background-color: #2563eb;
-}
-
-.division-section {
-  background-color: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  margin-bottom: 25px;
-  overflow: hidden;
-}
-
-.division-title {
-  background-color: rgba(0, 0, 0, 0.2);
-  padding: 15px 20px;
-  margin: 0;
-  font-size: 1.25rem;
-  border-bottom: 1px solid var(--border-color);
-  display: flex;
-  align-items: center;
-}
-
-/* ********************************************************************************************************************************* */
-
-/* Das gilt jetzt für JEDE Division standardmäßig */
-.division-title {
-  background-color: rgba(0, 0, 0, 0.2);
-  padding: 15px 20px;
-  margin: 0;
-  font-size: 1.25rem;
-  border-bottom: 1px solid var(--border-color);
-  display: flex;
-  align-items: center;
+    /* Globale Hintergrundfarben (Tiefes Anthrazit/Slate) */
+    --color-bg-main: #0b0f19 !important;          /* Sehr dunkler Haupt-Hintergrund */
+    --color-bg-surface: #1e293b !important;       /* Etwas helleres Slate für Karten/Boxen/Modals */
+    --color-bg-overlay: rgba(3, 7, 18, 0.75) !important; /* Fast schwarzes, transparentes Vollbild-Overlay */
   
-  /* HIER: Standardmäßig kriegt jede Box einen blauen Akzent */
-  color: var(--accent-blue);
-  border-left: 4px solid var(--accent-blue);
-}
-
-/* Dynamische CSS-Klassen basierend auf dem Namen aus dem Artikel */
-.division-section.division-xy .division-title,
-.division-section.elite .division-title {
-  color: var(--accent-gold);
-  border-left: 4px solid var(--accent-gold);
-}
-
-.division-section.ausbildung .division-title {
-  color: #a855f7;
-  border-left: 4px solid #a855f7;
-}
-
-
-/* ********************************************************************************************************************************* */
-/* Dashboard  (glaube ich)*/
-
-.dashboard-grid {
-  display: grid;
-  /* Erstellt automatisch Spalten, die mindestens 280px breit sind, maximal gleich groß (1fr) */
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 20px;
-  align-items: start;
-  width: 100%;
-}
-
-.division-section {
-  background-color: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  overflow: hidden;
-  margin-bottom: 0; 
-  display: flex;
-  flex-direction: column;
-}
-
-
-.mu-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.mu-row {
-  border-bottom: 1px solid var(--border-color);
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.mu-row:last-child {
-  border-bottom: none;
-}
-
-.mu-row:hover {
-  background-color: rgba(255, 255, 255, 0.03);
-}
-
-.mu-cell {
-  padding: 12px 10px;
-  text-align: left;
-  vertical-align: middle;
-}
-
-.mu-logo-img {
-  width: 24px;         
-  height: 24px;       
-  border-radius: 4px;  
-  object-fit: cover;  
-  border: 1px solid var(--border-color);
-  background-color: rgba(255, 255, 255, 0.05);
-  display: block;
-}
-
-.cell-logo {
-  width: 32px;         
-  min-width: 32px;     
-  vertical-align: middle;
-}
-
-.mu-logo-placeholder {
-  width: 40px;
-  height: 40px;
-  background-color: #334155;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-}
-
-.cell-name {
-  font-size: 0.95rem; /* Leicht verkleinert für Spalten */
-  max-width: 120px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-weight: 600;
-}
-
-.cell-stats {
-  color: var(--text-muted);
-  font-size: 0.85rem;
-  padding-left: 0;
-  text-align: right;
-}
-
-.cell-action {
-  width: 30px;
-  color: var(--text-muted);
-  text-align: center;
-  font-size: 1.2rem;
-}
-
-
-
-/* ********************************************************************************************************************************* */
-
-/* --- DETAILANSICHT STYLES --- */
-
-/* Container-Design der Detailseite */
-.mu-detail-view {
-  background-color: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 25px;
-  margin-top: 10px;
-}
-
-.back-btn {
-  background-color: transparent;
-  color: var(--text-muted);
-  border: 1px solid var(--border-color);
-  padding: 8px 16px;
-  border-radius: 5px;
-  cursor: pointer;
-  font-weight: 600;
-  margin-bottom: 20px;
-  transition: all 0.2s;
-}
-
-.back-btn:hover {
-  color: var(--text-color);
-  border-color: var(--text-muted);
-  background-color: rgba(255, 255, 255, 0.05);
-}
-
-.detail-header {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  border-bottom: 1px solid var(--border-color);
-  padding-bottom: 20px;
-  margin-bottom: 25px;
-}
-
-.back-arrow-btn {
-  background: none;
-  border: none;
-  color: var(--accent-blue);
-  cursor: pointer;
-  font-size: 1rem;
-  padding: 0;
-  text-align: left;
-  width: fit-content;
-}
-
-.back-arrow-btn:hover {
-  text-decoration: underline;
-}
-
-.detail-title-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
-
-.detail-mu-logo {
-  width: 50px;
-  height: 50px;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
-}
-
-.detail-subtitle {
-  color: var(--text-muted);
-  font-size: 0.85rem;
-  margin: 3px 0 0 0;
-}
-
-.detail-header h2 {
-  font-size: 2.2rem;
-  margin: 0 0 10px 0;
-}
-
-/* Kachelsystem / Grid */
-.detail-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 20px;
-  margin-bottom: 30px;
-}
-
-/* Ab Tablets/Desktop wird es zweispaltig */
-@media (min-width: 768px) {
-  .detail-grid {
-      grid-template-columns: 1fr 1fr;
+    /* Globale Textfarben */
+    --color-text-primary: #f8fafc;     /* Fast Weiß für Haupttexte und Titel */
+    --color-text-secondary: #94a3b8;   /* Helles Grau für Untertitel und Beschreibungen */
+    --color-text-muted: #64748b;       /* Dunkleres Grau für Labels oder Platzhalter */
+  
+    /* Primär-Farbe (WarEra-Grün/Emerald) */
+    --color-primary: #10b981;          /* Knalliges Smaragdgrün */
+    --color-primary-hover: #059669;    /* Dunkleres Grün für Hover-Effekt */
+    
+    /* Sekundär-Farbe (Muted Slate für Abbrechen-Buttons etc.) */
+    --color-secondary: #475569;        /* Mittleres Slate-Grau */
+    --color-secondary-hover: #334155;
+  
+    /* Status-Farben: Fehler (Error) */
+    --color-error: #f87171;            /* Helles, gut lesbares Rot auf dunklem Grund */
+    --color-error-bg: rgba(239, 68, 68, 0.15); /* Sehr transparentes Rot für Boxen */
+    --color-error-border: rgba(239, 68, 68, 0.4);
+  
+    /* Status-Farben: Erfolg (Success) */
+    --color-success: #34d399;          /* Helles Grün für Erfolgstexte */
+    --color-success-bg: rgba(16, 185, 129, 0.12);
+    --color-success-border: rgba(16, 185, 129, 0.3);
+  
+    /* Status-Farben: Laden (Loading) */
+    --color-loading: #60a5fa;          /* Klares Blau */
+    --color-loading-bg: rgba(59, 130, 246, 0.12);
+    --color-loading-border: rgba(59, 130, 246, 0.3);
+  
+    /* Ränder & Inputs */
+    --color-border: #334155;           /* Subtiler Rand für dunkle Elemente */
+    --color-input-bg: #0f172a;         /* Sehr dunkles Blau für Eingabefelder */
+    --color-input-focus: #3b82f6;      /* Blaues Aufleuchten bei Klick */
   }
-}
-/* MU-Statistik-Karten oben */
-.detail-stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 15px;
-  margin-bottom: 35px;
-}
 
-.detail-stat-card {
-  background-color: rgba(0, 0, 0, 0.2);
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  padding: 15px;
+  body {
+    background-color: var(--color-bg-main);
+    color: var(--color-text-primary);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 20px;
+  }
+  
+ /* ==========================================================================
+     Buttons
+     ========================================================================== */
+     .button-group {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 8px;
+    }
+    
+    [class^="btn-"], [class*=" btn-"], .btn {
+      flex: 1;
+      padding: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.15s ease;
+      text-align: center;
+    }
+    
+    .btn-primary {
+      background-color: var(--color-primary);
+      color: #ffffff;
+    }
+    
+    .btn-primary:hover:not(:disabled) {
+      background-color: var(--color-primary-hover);
+    }
+    
+    .btn-secondary {
+      background-color: var(--color-secondary);
+      color: var(--color-text-primary);
+    }
+    
+    .btn-secondary:hover:not(:disabled) {
+      background-color: var(--color-secondary-hover);
+    }
+    
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+/* ==========================================================================
+   Alles für App.jsx
+   ========================================================================== */
+
+  /* Der Container, der Text und Button nebeneinander hält */
+.page-header {
   display: flex;
-  flex-direction: column;
-  gap: 5px;
+  justify-content: space-between; /* Schiebt Text nach links, Button nach rechts */
+  align-items: flex-start;        /* Richtet den Button oben an der Kante des H1 aus */
+  gap: 20px;                      /* Sicherheitsabstand, falls der Titel sehr lang wird */
 }
 
-.stat-label {
-  font-size: 0.85rem;
-  color: var(--text-muted);
-  text-transform: uppercase;
+/* Der Text-Block links */
+.-page-header-text h1 {
+  margin-top: 0; /* Verhindert, dass die Überschrift den Button nach unten drückt */
 }
 
-.stat-value {
-  font-size: 1.2rem;
-  font-weight: bold;
+/* Der Button-Container rechts */
+.page-actions {
+  flex-shrink: 0; /* Verhindert, dass der Button gequetscht wird */
 }
 
-/* Soldaten/User-Grid (Auflistung unten) */
-.member-list-section h2 {
-  font-size: 1.3rem;
-  margin-bottom: 15px;
-  border-bottom: 2px solid var(--border-color);
-  padding-bottom: 8px;
-}
-
-.members-grid {
-  display: grid;
-  /* Packt Soldaten flexibel nebeneinander */
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 12px;
-}
-
-/* Die einzelne Soldaten-Karte */
-.member-card {
-  background-color: rgba(255, 255, 255, 0.02);
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  padding: 10px 12px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  transition: transform 0.15s ease, background-color 0.15s ease;
-}
-
-.member-card:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-  transform: translateY(-2px);
-}
-
-/* Avatare der Soldaten */
-.member-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%; /* Runde Avatare für die User */
-  border: 1px solid var(--border-color);
-  object-fit: cover;
-}
-
-.member-avatar-placeholder {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background-color: var(--border-color);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.8rem;
-  font-weight: bold;
-}
-
-/* Info-Texte der Soldaten */
-.member-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  overflow: hidden;
-}
-
-.member-name {
-  font-weight: 600;
-  font-size: 0.95rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.member-damage {
-  font-size: 0.85rem;
-  color: var(--accent-gold);
-}
-
-.dmg-label {
-  color: var(--text-muted);
-  font-size: 0.75rem;
-}
-
-/* jhfsdhjkdfsjkhfd*/
-.detail-card {
-  background-color: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 20px;
-}
-
-.detail-card h3 {
-  margin-top: 0;
-  margin-bottom: 15px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  padding-bottom: 8px;
-  font-size: 1.2rem;
-  color: var(--accent-blue);
-}
-
-/* Führungs-Ränge */
-.leader-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 10px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
-.leader-row:last-child {
-  border-bottom: none;
-}
-.rank-badge {
-  background-color: #334155;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  font-weight: bold;
-}
-
-
-.click-profile-link:hover {
-  cursor: pointer;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  transition: all 0.2s ease-in-out;
+.btn-secondary-keychange {
+  background-color: var(--color-secondary);
+  color: var(--color-text-primary);
+  margin-top: 25px;
 }

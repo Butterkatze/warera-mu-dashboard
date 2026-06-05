@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
-import { getWarEraClient } from './api.js';
+import { getWarEraClient } from '../src/api.js';
 
 export default function MuDetails({ muId, onBack }) {
-  const [mu, setMu] = useState(() => {
-    // SYNCHRONER START: Wir holen die MU-Daten direkt aus dem Dashboard-Cache!
+  const [mu] = useState(() => {
     const cachedMu = localStorage.getItem(`mu_cache_${muId}`);
     if (cachedMu) {
       const { data } = JSON.parse(cachedMu);
-      return data; // Initialisiert den State sofort mit den vorhandenen Daten
+      return data; 
     }
     return null;
   });
@@ -16,28 +15,13 @@ export default function MuDetails({ muId, onBack }) {
   const [members, setMembers] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
 
-  // Fallback: Nur wenn die MU aus irgendeinem Grund NICHT im Cache war, laden wir sie hier nach
-  useEffect(() => {
-    async function loadMuFallback() {
-      if (mu) return; // Schon da, kein Call nötig!
-
-      try {
-        const client = getWarEraClient();
-        const response = await client.mu.getById({ muId });
-        const data = response?.result?.data || response;
-        setMu(data);
-      } catch (error) {
-        console.error("Fehler beim Fallback-Laden der MU:", error);
-      }
-    }
-    loadMuFallback();
-  }, [muId, mu]);
-
   // Haupt-Prozess: Lädt alle User-Profile parallel, sobald wir die MU-Struktur (aus Cache oder API) haben
-// Haupt-Prozess: Nutzt exakt deine funktionierende .map-Logik
 useEffect(() => {
   async function loadAllProfiles() {
-    if (!mu) return;
+    const cachedMu = localStorage.getItem(`mu_cache_${muId}`);
+
+    if (!cachedMu) return;
+    const { data: currentMu } = JSON.parse(cachedMu);
     
     setLoadingUsers(true);
     const client = getWarEraClient();
@@ -45,26 +29,22 @@ useEffect(() => {
     const now = Date.now();
 
     try {
-      // 1. Alle IDs sammeln, die wir abfragen müssen
-      const commanderIds = mu.roles?.commanders || [];
-      const managerIds = mu.roles?.managers || [];
-      const memberIds = mu.members || [];
-
-      // Wir erstellen eine Liste aller einzigartigen IDs, um keine ID doppelt abzufragen
+      const commanderIds = currentMu.roles?.commanders || [];
+      const managerIds = currentMu.roles?.managers || [];
+      const memberIds = currentMu.members || [];
       const allUniqueIds = [...new Set([...commanderIds, ...managerIds, ...memberIds])];
 
-      // 2. Exakt deine funktionierende Schleife über alle IDs jagen
       const profilePromises = allUniqueIds.map(async (userId) => {
         const cacheKey = `user_cache_${userId}`;
+        
         const cached = localStorage.getItem(cacheKey);
-
+        
         if (cached) {
           const { data, timestamp } = JSON.parse(cached);
           if (now - timestamp < CACHE_DURATION) return data;
         }
 
         try {
-          // Exakt dein funktionierender API-Aufruf
           const response = await client.user.getUserLite({ userId });
           const userData = response?.result?.data || response;
 
@@ -106,7 +86,7 @@ useEffect(() => {
   }
 
   loadAllProfiles();
-}, [mu]); // Triggert sofort, da 'mu' durch den Cache-State-Initialisierer meistens schon existiert
+}, [muId]);// Triggert sofort, da 'mu' durch den Cache-State-Initialisierer meistens schon existiert
 
   if (!mu) {
     return <p style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>MU-Spezifikationen werden geladen...</p>;
