@@ -3,15 +3,16 @@ import { getWarEraClient } from './api.js';
 export class DataHandler {
 
 
-    constructor(initialArticleId = '') {
+    constructor(initialArticleId = '', forceUpdate = false) {
         this.client = getWarEraClient();
+        this.forceUpdate = forceUpdate
         
         // const ARTICLE_ID = '6a1f025b37df43a8d01bb9a2'; 
         // HIER sichern wir die ID direkt in der Klasse
         this.currentArticleId = initialArticleId; 
 
-        this.ARTICLE_CACHE_TIME = 5 * 60 * 1000; 
-        this.MU_CACHE_TIME = 15 * 60 * 1000;     
+        this.ARTICLE_CACHE = 5 * 60 * 1000; 
+        this.MU_CACHE= 15 * 60 * 1000;     
     }
 
     // Methode, um die ID jederzeit von außen live zu ändern
@@ -49,19 +50,18 @@ export class DataHandler {
     }
 
     async getArticle(){
-    const ARTICLE_CACHE = 5 * 60 * 1000;
     const now = Date.now();
     const articleCacheKey = `article_cache_${this.currentArticleId}`;
 
     const cached = localStorage.getItem(articleCacheKey);
 
-          if (cached) {
-            const { data, timestamp } = JSON.parse(cached);
-            if (now - timestamp < ARTICLE_CACHE) {
+    if (cached && !this.forceUpdate) {
+        const { data, timestamp } = JSON.parse(cached);
+        if (now - timestamp < this.ARTICLE_CACHE) {
 
-              return data; 
-            }
+            return data; 
         }
+    }
 
     const formatedArticle = await this.#setArticleCache(articleCacheKey);
 
@@ -111,19 +111,17 @@ export class DataHandler {
     }
 
     async #getMU(MU_ID){
-    const MU_CACHE = 15 * 60 * 1000;
     const now = Date.now();
     const muCacheKey = `mu_cache_${MU_ID}`;
 
     const cached = localStorage.getItem(muCacheKey);
 
-          if (cached) {
-            const { data, timestamp } = JSON.parse(cached);
-            if (now - timestamp < MU_CACHE) {
-
-              return data; 
-            }
+    if (cached && !this.forceUpdate) {
+        const { data, timestamp } = JSON.parse(cached);
+        if (now - timestamp < this.MU_CACHE) {
+            return data; 
         }
+    }
 
     const formatedMU = await this.#setMUCache(MU_ID, muCacheKey);
 
@@ -169,41 +167,41 @@ export class DataHandler {
 
   /*#################    Strucktur mit Division (grupper ), Muid und Mu-daten (bzw MU objekt bauen)  ####################*/
 
-    const ergebnisListe = []; // Das flache finale Array
-
-    for (const gruppe of geparsteGruppen) {
-        
-        // Alle IDs dieser Spalte parallel/asynchron laden
-        const muPromises = gruppe.ids.map(async (id) => {
-            try {
-                const MuData = await this.#getMU(id); 
-                
-                return {
-                    spaltenName: gruppe.category, 
-                    id: id,                       
-                    objekt: MuData    
-                };
-
-            } catch (error) {
-                console.error(`Fehler bei ID ${id}:`, error);
-                return null;
-            }
-        });
-
-        const geladeneMus = await Promise.all(muPromises);
-        
-        // Die gefilterten Ergebnisse flach in unsere Hauptliste schieben
-        geladeneMus.forEach(eintrag => {
-            if (eintrag !== null) {
-                ergebnisListe.push(eintrag);
-            }
-        });
-    }
-
-    return ergebnisListe;
+    const allPromises = [];
     
-    }
+ 
+  geparsteGruppen.forEach(gruppe => {
+    gruppe.ids.forEach(id => {
+      
+     
+      const muPromise = (async () => {
+        try {
+          const MuData = await this.#getMU(id); 
+          return {
+            spaltenName: gruppe.category, 
+            id: id,                    
+            objekt: MuData    
+          };
+        } catch (error) {
+          console.error(`Fehler bei ID ${id}:`, error);
+          return null;
+        }
+      })();
 
+      allPromises.push(muPromise);
+    });
+  });
+
+  /* #################   3. NEU: ALLES auf einen Schlag feuern!   #################### */
+  const geladeneMus = await Promise.all(allPromises);
+  
+  // Am Ende filtern wir die Null-Werte (Fehler) heraus und geben das flache Array zurück
+  return geladeneMus.filter(eintrag => eintrag !== null);
+}
+
+
+
+    
 
 
 }

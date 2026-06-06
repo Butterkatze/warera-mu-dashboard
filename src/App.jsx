@@ -32,16 +32,35 @@ function App() {
 
   const [showTokenPopup, setShowTokenPopup] = useState(apiKey === FAKE_KEY);
   const [isLoading, setIsLoading] = useState(false);
-  const [muData, setMuData] = useState([]);
 
-  // Reine Event-Funktion: Wird nur gefeuert, wenn sie explizit aufgerufen wird.
-  // Da sie von keinem State abhängt, gibt es null Kaskaden-Gefahr!
-  const handleLoadData = async (targetId) => {
+
+  const [muData, setMuData] = useState(() => {
+    const savedKey = localStorage.getItem("warera_api_key") || FAKE_KEY;
+    const savedId = localStorage.getItem("warera_article_id") || DEFAULT_ARTICLE_ID;
+    
+    // Wenn Daten da sind, versuchen wir die Daten direkt synchron aus dem Cache zu kratzen
+    if (savedKey !== FAKE_KEY) {
+      const cacheKey = `mu_cache_${savedId}`; // Basiert auf deiner Logik im Datahandler
+      try {
+        const cachedData = localStorage.getItem(cacheKey);
+        if (cachedData) {
+          // Falls dein Cache-Format ein direktes Array hergibt oder über getMUFromArticle kommt:
+          // Hinweis: Wenn getMUFromArticle asynchron baut, triggern wir das unten beim Start.
+        }
+      } catch (e) {
+        console.error("Cache-Boot-Fehler", e);
+      }
+    }
+    return [];
+  });
+
+
+  const handleLoadData = async (targetId, forceUpdate = false) => {
     if (!targetId) return;
     setIsLoading(true);
     try {
       console.log("Event-gesteuertes Laden für ID:", targetId);
-      const handlerInstance = new DataHandler(targetId);
+      const handlerInstance = new DataHandler(targetId, forceUpdate);
       const data = await handlerInstance.getMUFromArticle();
       setMuData(data);
     } catch (error) {
@@ -51,11 +70,18 @@ function App() {
     }
   };
 
+  const [hasCheckedInitialData, setHasCheckedInitialData] = useState(false);
+  if (!showTokenPopup && !hasCheckedInitialData) {
+    setHasCheckedInitialData(true);
+    handleLoadData(articleId);
+  }
+
   // Hilfsfunktion für den Start nach dem ersten erfolgreichen Login
-  const handleInitialClose = () => {
+  const closePopup = () => {
     setShowTokenPopup(false);
     handleLoadData(articleId);
   };
+
     return (
     <>
       {showTokenPopup && (
@@ -66,7 +92,7 @@ function App() {
           setArticleId ={setArticleId}
           onRefresh={(newId) => handleLoadData(newId)}
           onClose={() => {
-            handleInitialClose();
+            closePopup();
           }}
         />
       )}
@@ -92,7 +118,7 @@ function App() {
           <button 
               className="btn-secondary"
               disabled={isLoading}
-              onClick={() => handleLoadData(articleId)}
+              onClick={() => handleLoadData(articleId, true)}
             >
               {isLoading ? "Lädt..." : "Aktualisieren"}
             </button>
