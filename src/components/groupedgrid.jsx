@@ -1,4 +1,3 @@
-import {useDataloader} from './dataloader.jsx';
 import './groupedgrid.css';
 
 // 1. Die Item-Komponente mit neuem Layout (Bild links, Text/Stats rechts)
@@ -33,12 +32,8 @@ function GridItem({ image, name, stats = {} }) {
     </div>
   );
 }
-function GroupedGrid({articleId}) {
+function GroupedGrid({ muData = [] }) {
   
-  
-
-  const { muData = [] } =  useDataloader({ articleId: articleId }); 
-
   if (!muData || muData.length === 0) {
     return <div className="grid-loading">Militäreinheiten werden geladen...</div>;
   }
