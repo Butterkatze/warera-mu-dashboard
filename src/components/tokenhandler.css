@@ -96,6 +96,90 @@
     opacity: 0.5;
     cursor: not-allowed;
   }
+
+  /* Advanced Options */
+  .advanced-toggle-container {
+    margin: 15px 0 5px 0;
+  }
+
+  
+  .advanced-toggle-btn {
+    background: none;
+    border: none;
+    color: var(--color-text-secondary, #aaa);
+    cursor: pointer;
+    font-size: 0.85rem;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: color 0.2s ease;
+  }
+
+  .advanced-toggle-btn:hover {
+    color: #fff;
+  }
+
+  
+  .advanced-input-group {
+    animation: fadeInAdvanced 0.25s ease-out forwards;
+  }
+
+
+  .input-with-action {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .input-with-action .token-input {
+    flex: 1; 
+  }
+
+  /* ==========================================================================
+    Reset Button
+    ========================================================================== */
+
+
+/* Der neue kreisrunde Reset-Button */
+.btn-reset-round {
+  width: 42px;               /* Feste Breite */
+  height: 42px;              /* Identische Höhe für das perfekte Quadrat */
+  flex: none;
+  border-radius: 50%;        /* Macht das Quadrat absolut rund */
+  background-color: #333;
+  border: 1px solid #444;
+  color: #fff;
+  cursor: pointer;
+  
+  /* Flexbox zentriert das SVG-Icon perfekt in der Mitte des Kreises */
+  display: flex;
+  align-items: center;
+  justify-content: center;    /* Verhindert, dass das Inputfeld den Kreis zerdrückt */
+  transition: all 0.2s ease;
+  padding: 0;                /* Kein störendes Innen-Padding mehr */
+}
+
+/* Hover-Effekt, wenn die Maus drüberfährt (nur wenn nicht gesperrt) */
+.btn-reset-round:hover:not(:disabled) {
+  background-color: #444;
+  border-color: #555;
+  color: #00bcd4;            /* Optional: Pfeil leuchtet leicht bläulich/cyan auf */
+  transform: rotate(-45deg); /* Cooler Mini-Effekt: Pfeil dreht sich beim Hovern leicht */
+}
+
+/* Zustand, wenn der Button gesperrt ist (Inputfeld leer) */
+.btn-reset-round:disabled {
+  color: #555;
+  background-color: #222;
+  border-color: #2a2a2a;
+  cursor: not-allowed;
+}
+
+/* Sorgt dafür, dass sich das SVG-Icon im Button geschmeidig mitdreht */
+.btn-reset-round svg {
+  transition: transform 0.2s ease;
+}
   
   /* ==========================================================================
      Dynamische Status-Boxen (Laden, Fehler, Erfolg)
@@ -142,47 +226,14 @@
     color: var(--color-success);
   }
   
-  /* ==========================================================================
-     Buttons
-     ========================================================================== */
-  .button-group {
-    display: flex;
-    justify-content: space-between;
-    gap: 12px;
-    margin-top: 8px;
+ /* Keyframes für die geschmeidige Animation */
+@keyframes fadeInAdvanced {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
   }
-  
-  .btn {
-    flex: 1;
-    padding: 12px;
-    font-size: 14px;
-    font-weight: 600;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background-color 0.15s ease;
-    text-align: center;
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
-  
-  .btn-primary {
-    background-color: var(--color-primary);
-    color: #ffffff;
-  }
-  
-  .btn-primary:hover:not(:disabled) {
-    background-color: var(--color-primary-hover);
-  }
-  
-  .btn-secondary {
-    background-color: var(--color-secondary);
-    color: var(--color-text-primary);
-  }
-  
-  .btn-secondary:hover:not(:disabled) {
-    background-color: var(--color-secondary-hover);
-  }
-  
-  .btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
+}

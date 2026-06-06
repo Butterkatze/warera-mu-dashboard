@@ -1,5 +1,5 @@
-import 'react';
-import './grid.css';
+import {useDataloader} from './dataloader.jsx';
+import './groupedgrid.css';
 
 // 1. Die Item-Komponente mit neuem Layout (Bild links, Text/Stats rechts)
 function GridItem({ image, name, stats = {} }) {
@@ -33,19 +33,46 @@ function GridItem({ image, name, stats = {} }) {
     </div>
   );
 }
-function GroupedGrid({ groups }) {
+function GroupedGrid({articleId}) {
+  
+  
+
+  const { muData = [] } =  useDataloader({ articleId: articleId }); 
+
+  if (!muData || muData.length === 0) {
+    return <div className="grid-loading">Militäreinheiten werden geladen...</div>;
+  }
+
+  const gruppierteDaten = {};
+
+  muData.forEach((eintrag) => {
+    const nameDerSpalte = eintrag.spaltenName;
+    
+    // Wenn die Spalte im Hilfsobjekt noch nicht existiert, legen wir sie als leeres Array an
+    if (!gruppierteDaten[nameDerSpalte]) {
+      gruppierteDaten[nameDerSpalte] = [];
+    }
+    
+    // Wir schieben das eigentliche MU-Objekt in diese Spalte
+    gruppierteDaten[nameDerSpalte].push(eintrag);
+  });
+
+
   return (
     <div className="grouped-grid-container">
-      {Object.entries(groups).map(([groupName, items]) => (
+      {Object.entries(gruppierteDaten).map(([groupName, muEintraege]) => (
         <div key={groupName} className="grid-column">
           <h2 className="column-title">{groupName}</h2>
           <div className="column-items">
-            {items.map((item) => (
+            {muEintraege.map((eintrag) => (
               <GridItem
-                key={item.id}
-                image={item.image}
-                name={item.name}
-                stats={item.stats}
+                key={eintrag.id}
+                image={eintrag.objekt?.avatarUrl || ""}
+                name={eintrag.objekt?.name || "Unbekannte Einheit"}
+                stats={{
+                  "Weekly Dmg": eintrag.objekt?.rankings?.muWeeklyDamages?.toLocaleString() || "0",
+                  "Members": eintrag.objekt?.members?.length || 0
+                }}
               />
             ))}
           </div>

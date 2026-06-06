@@ -1,5 +1,25 @@
 import { getWarEraClient } from './api.js';
 
+export class DataHandler {
+
+
+    constructor(initialArticleId = '') {
+        this.client = getWarEraClient();
+        
+        // const ARTICLE_ID = '6a1f025b37df43a8d01bb9a2'; 
+        // HIER sichern wir die ID direkt in der Klasse
+        this.currentArticleId = initialArticleId; 
+
+        this.ARTICLE_CACHE_TIME = 5 * 60 * 1000; 
+        this.MU_CACHE_TIME = 15 * 60 * 1000;     
+    }
+
+    // Methode, um die ID jederzeit von außen live zu ändern
+    setArticleId(newId) {
+        this.currentArticleId = newId;
+        console.log(`Klassen-Zustand geändert: Article ID ist jetzt ${this.currentArticleId}`);
+    }
+
 
 
 
@@ -7,11 +27,11 @@ import { getWarEraClient } from './api.js';
     Article Funktionen
     ========================================================================== */
 
-async function setArticleCache(ARTICLE_ID, articleCacheKey) {
+    async  #setArticleCache(articleCacheKey) {
 
     const client = getWarEraClient();
   
-    const response = await client.article.getArticleById({ articleId: ARTICLE_ID });
+    const response = await client.article.getArticleById({ articleId: this.currentArticleId });
     /* Daten Formatierne*/
     const articleData = response?.result?.data || response;
     const formatedArticle = {
@@ -26,12 +46,12 @@ async function setArticleCache(ARTICLE_ID, articleCacheKey) {
     localStorage.setItem(articleCacheKey, JSON.stringify({ data: formatedArticle, timestamp: now }));
 
     return formatedArticle
-}
+    }
 
-export async function getArticle(ARTICLE_ID){
+    async getArticle(){
     const ARTICLE_CACHE = 5 * 60 * 1000;
     const now = Date.now();
-    const articleCacheKey = `article_cache_${ARTICLE_ID}`;
+    const articleCacheKey = `article_cache_${this.currentArticleId}`;
 
     const cached = localStorage.getItem(articleCacheKey);
 
@@ -43,16 +63,16 @@ export async function getArticle(ARTICLE_ID){
             }
         }
 
-    const formatedArticle = await setArticleCache(ARTICLE_ID, articleCacheKey);
+    const formatedArticle = await this.#setArticleCache(articleCacheKey);
 
     return formatedArticle
-}
+    }
 
 /* ==========================================================================
     MU Funktionen
     ========================================================================== */
 
-async function setMUCache(MU_ID, muCacheKey) {
+    async #setMUCache(MU_ID, muCacheKey) {
 
     const client = getWarEraClient();
   
@@ -88,9 +108,9 @@ async function setMUCache(MU_ID, muCacheKey) {
     localStorage.setItem(muCacheKey, JSON.stringify({ data: formatedMU, timestamp: now }));
 
     return formatedMU
-}
+    }
 
-async function getMU(MU_ID){
+    async #getMU(MU_ID){
     const MU_CACHE = 15 * 60 * 1000;
     const now = Date.now();
     const muCacheKey = `mu_cache_${MU_ID}`;
@@ -105,17 +125,17 @@ async function getMU(MU_ID){
             }
         }
 
-    const formatedMU = await setMUCache(MU_ID, muCacheKey);
+    const formatedMU = await this.#setMUCache(MU_ID, muCacheKey);
 
     
 
     return formatedMU
-}
+    }
 
-export async function getMUFromArticle(ARTICLE_ID) {
+    async getMUFromArticle() {
   
 
-    const articleData = await getArticle(ARTICLE_ID);
+    const articleData = await this.getArticle();
 
   /*#################    Parser   ####################*/
   
@@ -144,10 +164,10 @@ export async function getMUFromArticle(ARTICLE_ID) {
     while ((match = muRegex.exec(part)) !== null) {
     aktuelleGruppe.ids.push(match[1]);
     }
-    if (geparsteGruppen.ids.length > 0) geparsteGruppen.push(aktuelleGruppe);
+    if (aktuelleGruppe.ids.length > 0) geparsteGruppen.push(aktuelleGruppe);
     });
 
-  /*#################      3-teilige Strucktur    ####################*/
+  /*#################    Strucktur mit Division (grupper ), Muid und Mu-daten (bzw MU objekt bauen)  ####################*/
 
     const ergebnisListe = []; // Das flache finale Array
 
@@ -156,7 +176,7 @@ export async function getMUFromArticle(ARTICLE_ID) {
         // Alle IDs dieser Spalte parallel/asynchron laden
         const muPromises = gruppe.ids.map(async (id) => {
             try {
-                const MuData = await getMU(id); 
+                const MuData = await this.#getMU(id); 
                 
                 return {
                     spaltenName: gruppe.category, 
@@ -182,7 +202,8 @@ export async function getMUFromArticle(ARTICLE_ID) {
 
     return ergebnisListe;
     
+    }
+
+
+
 }
-
-
-
