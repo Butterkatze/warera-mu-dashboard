@@ -73,135 +73,173 @@ export class DataHandler {
     ========================================================================== */
 
     async #setMUCache(MU_ID, muCacheKey) {
-
-    const client = getWarEraClient();
-  
-    const response = await client.mu.getById({ muId : MU_ID });
-    /* Daten Formatierne*/
-    const muData = response?.result?.data || response;
-    const formatedMU = {
-
-        _id: muData._id,
-        avatarUrl: muData.avatarUrl,
-        name: muData.name,
-        managers: muData.roles?.managers,
-        commanders: muData.roles?.commanders,
-        members: muData.members,
-        activeUpgradeLevels: {
-            "headquarters": muData.activeUpgradeLevels?.headquarters || 0,
-            "dormitories" : muData.activeUpgradeLevels?.dormitories ,
-          },
-        rankings: {
-            "muWeeklyDamages"   : muData.rankings?.muWeeklyDamages?.value,
-            "muBounty"          : muData.rankings?.muBounty?.value,       
-            "muReputation"      : muData.rankings?.muReputation?.value,
-            "muDamages"         : muData.rankings?.muDamages?.value,
-            "muTerrain"         : muData.rankings?.muTerrain?.value,
-            "muWealth"          : muData.rankings?.muWealth?.value,
-        },
-    };
-
-    /* Cache anlegen*/
     
-    const now = Date.now();
+        const now = Date.now();
+        const response = await this.client.mu.getById({ muId : MU_ID });
+        const muData = response?.result?.data || response;
 
-    localStorage.setItem(muCacheKey, JSON.stringify({ data: formatedMU, timestamp: now }));
 
-    return formatedMU
-    }
+        const formatedMU = {
 
-    async #getMU(MU_ID){
-    const now = Date.now();
-    const muCacheKey = `mu_cache_${MU_ID}`;
-
-    const cached = localStorage.getItem(muCacheKey);
-
-    if (cached && !this.forceUpdate) {
-        const { data, timestamp } = JSON.parse(cached);
-        if (now - timestamp < this.MU_CACHE) {
-            return data; 
-        }
-    }
-
-    const formatedMU = await this.#setMUCache(MU_ID, muCacheKey);
-
-    
-
-    return formatedMU
-    }
-
-    async getMUFromArticle() {
-  
-
-    const articleData = await this.getArticle();
-
-  /*#################    Parser   ####################*/
-  
-    const geparsteGruppen = [];
-    
-    const parts = articleData.content.split(/<h2[^>]*>/);
-    
-    parts.forEach((part, index) => {
-    // Der erste Teil vor dem ersten <h2> hat keine Überschrift
-    if (index === 0) return; 
-    
-    // Extrahiere den Divisionsnamen (alles bis zum schließenden </h2>)
-    const nameMatch = part.match(/([^<]+)<\/h2>/);
-    if (!nameMatch) return;
-    
-    const divisionName = nameMatch[1].trim();
-    
-    const aktuelleGruppe = {
-        category: divisionName,
-        ids: []
+            _id: muData._id,
+            avatarUrl: muData.avatarUrl,
+            name: muData.name,
+            managers: muData.roles?.managers,
+            commanders: muData.roles?.commanders,
+            members: muData.members,
+            activeUpgradeLevels: {
+                "headquarters": muData.activeUpgradeLevels?.headquarters || 0,
+                "dormitories" : muData.activeUpgradeLevels?.dormitories ,
+            },
+            rankings: {
+                "muWeeklyDamages"   : muData.rankings?.muWeeklyDamages?.value,
+                "muBounty"          : muData.rankings?.muBounty?.value,       
+                "muReputation"      : muData.rankings?.muReputation?.value,
+                "muDamages"         : muData.rankings?.muDamages?.value,
+                "muTerrain"         : muData.rankings?.muTerrain?.value,
+                "muWealth"          : muData.rankings?.muWealth?.value,
+            },
         };
 
-    // MU ID Parser 
-    const muRegex = /muId&quot;:&quot;([a-f0-9]{24})/g;
-    let match;
-    while ((match = muRegex.exec(part)) !== null) {
-    aktuelleGruppe.ids.push(match[1]);
+        /* Cache anlegen*/
+        localStorage.setItem(muCacheKey, JSON.stringify({ data: formatedMU, timestamp: now }));
+        return formatedMU
     }
-    if (aktuelleGruppe.ids.length > 0) geparsteGruppen.push(aktuelleGruppe);
-    });
 
-  /*#################    Strucktur mit Division (grupper ), Muid und Mu-daten (bzw MU objekt bauen)  ####################*/
+    #parseMUFromArticle(articleData){
 
-    const allPromises = [];
+        const geparsteGruppen = [];
     
- 
-  geparsteGruppen.forEach(gruppe => {
-    gruppe.ids.forEach(id => {
-      
-     
-      const muPromise = (async () => {
-        try {
-          const MuData = await this.#getMU(id); 
-          return {
-            spaltenName: gruppe.category, 
-            id: id,                    
-            objekt: MuData    
-          };
-        } catch (error) {
-          console.error(`Fehler bei ID ${id}:`, error);
-          return null;
+        const parts = articleData.content.split(/<h2[^>]*>/);
+        
+        parts.forEach((part, index) => {
+        // Der erste Teil vor dem ersten <h2> hat keine Überschrift
+        if (index === 0) return; 
+        
+        // Extrahiere den Divisionsnamen (alles bis zum schließenden </h2>)
+        const nameMatch = part.match(/([^<]+)<\/h2>/);
+        if (!nameMatch) return;
+        
+        const divisionName = nameMatch[1].trim();
+        
+        const aktuelleGruppe = {
+            category: divisionName,
+            ids: []
+            };
+
+        // MU ID Parser 
+        const muRegex = /muId&quot;:&quot;([a-f0-9]{24})/g;
+        let match;
+        while ((match = muRegex.exec(part)) !== null) {
+        aktuelleGruppe.ids.push(match[1]);
         }
-      })();
+        if (aktuelleGruppe.ids.length > 0) geparsteGruppen.push(aktuelleGruppe);
+        });
 
-      allPromises.push(muPromise);
-    });
-  });
+        return geparsteGruppen;
+    }
 
-  /* #################   3. NEU: ALLES auf einen Schlag feuern!   #################### */
-  const geladeneMus = await Promise.all(allPromises);
-  
-  // Am Ende filtern wir die Null-Werte (Fehler) heraus und geben das flache Array zurück
-  return geladeneMus.filter(eintrag => eintrag !== null);
-}
+    async #getMU (geparsteGruppen){
+
+        const apiTasks = []; 
+        const finalResults = []; 
+        const now = Date.now();
+      
+        // Map, um bereits erstellte API-Promises für IDs zu merken
+        const laufendeApiRequests = new Map();
+      
+        geparsteGruppen.forEach(gruppe => {
+          gruppe.ids.forEach(id => {
+            const cacheKey = `mu_cache_${id}`;
+            const cached = localStorage.getItem(cacheKey);
+      
+            // A) Cache-Prüfung (Duplikate aus dem Cache sind kein Problem)
+            if (cached && !this.forceUpdate) {
+              try {
+                const { data, timestamp } = JSON.parse(cached);
+                if (now - timestamp < this.MU_CACHE_TIME) {
+                  finalResults.push({
+                    spaltenName: gruppe.category,
+                    id: id,
+                    objekt: data
+                  });
+                  return; 
+                }
+              } catch (e) {
+                console.error("Cache Parse Fehler:", e);
+              }
+            }
+      
+            // B) Duplikat-Schutz für Netzwerk-Anfragen:
+            // Haben wir für DIESE ID in diesem Durchlauf schon einen API-Task erstellt?
+            if (laufendeApiRequests.has(id)) {
+              // Ja! Wir hängen uns einfach an denselben Task ran. 
+              // Die API wird kein zweites Mal gefragt, aber das Grid bekommt sein Objekt.
+              const duplicateTask = (async () => {
+                const muData = await laufendeApiRequests.get(id);
+                return {
+                  spaltenName: gruppe.category,
+                  id: id,
+                  objekt: muData
+                };
+              })();
+              
+              apiTasks.push(duplicateTask);
+              return;
+            }
+      
+            // C) Erster API-Request für diese ID (Kein Duplikat bisher)
+            // Wir lagern die reine API-Abfrage aus, damit wir das nackte Ergebnis teilen können
+            const fetchTask = (async () => {
+              try {
+      
+                return await this.#setMUCache( id, cacheKey)
+              
+              } catch (error) {
+                console.error(`Fehler bei ID ${id}:`, error);
+                return { _id: id, name: `Fehler (${id.substring(0,4)})`, members: [] };
+              }
+            })();
+      
+            // Wir merken uns dieses laufende Promise für exakt diese ID
+            laufendeApiRequests.set(id, fetchTask);
+      
+            // Für das Endergebnis aufbereiten
+            const mainTask = (async () => {
+              const muData = await fetchTask;
+              return {
+                spaltenName: gruppe.category,
+                id: id,
+                objekt: muData
+              };
+            })();
+      
+            apiTasks.push(mainTask);
+          });
+        });
+      
+        /* #################    API-Anfragen gleichzeitig feuern   #################### */
+        if (apiTasks.length > 0) {
+          const apiResults = await Promise.all(apiTasks);
+          finalResults.push(...apiResults);
+        }
+      
+        return finalResults.filter(eintrag => eintrag !== null);
+
+    }
 
 
+    async getMUFromArticle() {
 
+        const articleData = await this.getArticle();
+
+        /*#################    Parser   ####################*/
     
+        const geparsteGruppen = this.#parseMUFromArticle(articleData);
 
+        /*#################    Strucktur mit Division (gruppe ), Muid und Mu-daten (bzw MU objekt bauen)  ####################*/
+
+        return this.#getMU (geparsteGruppen);
+    }   
 
 }
