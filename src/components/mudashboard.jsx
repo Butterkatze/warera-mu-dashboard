@@ -119,6 +119,7 @@ function MuUserList({ members = [], muUsers = [], isLoadingUsers = false }) {
             <thead>
               <tr>
                 <th>Name / ID</th>
+                <th>Weekly Damage</th>
                 <th>Userlevel</th>
                 <th>Aktiver Bürger</th>
               </tr>
@@ -128,6 +129,7 @@ function MuUserList({ members = [], muUsers = [], isLoadingUsers = false }) {
                 const isObject = typeof user === 'object';
                 const userName = isObject ? user.username : `User-ID: ${user}`;
                 const userRank = isObject && user.level ? `Level ${user.level}` : 'Mitglied';
+                const weeklyDamage = isObject && user.weeklyUserDamages ? user.weeklyUserDamages.toLocaleString() : '0';
                 const isActive = isObject ? (user.isActive ? 'aktiv' : 'inaktiv') : 'keine Daten';
                 const hasAvatar = isObject && user.avatarUrl && user.avatarUrl !== "";
 
@@ -143,6 +145,7 @@ function MuUserList({ members = [], muUsers = [], isLoadingUsers = false }) {
                       </div>
                       <span className="mu-table-username-text">{userName}</span>
                     </td>
+                    <td>{weeklyDamage}</td>
                     <td>{userRank}</td>
                     <td>
                       <span className={`status-dot ${isActive}`}></span>
