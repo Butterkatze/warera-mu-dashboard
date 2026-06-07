@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { DataHandler } from './datahandler.js';
 import './mudashboard.css';
 
 // ==========================================================================
@@ -155,7 +154,7 @@ function MuUserList({ members = [], muUsers = [], isLoadingUsers = false }) {
 // ==========================================================================
 // Hauptkomponente: Zusammenführung des Dashboards
 // ==========================================================================
-function MuDashboard({ selectedMu = null }) {
+function MuDashboard({ selectedMu = null, dataHandler }) {
   const [muUsers, setMuUsers] = useState({ managers: [], commanders: [], members: [] });
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
 
@@ -166,8 +165,7 @@ function MuDashboard({ selectedMu = null }) {
     const fetchUserDetails = async () => {
       setIsLoadingUsers(true);
       try {
-      const handler = new DataHandler(); 
-      const fullUserData = await handler.getMUUserData(selectedMu.objekt._id);
+      const fullUserData = await dataHandler.getMUUserData(selectedMu.objekt._id);
 
       setMuUsers(fullUserData);
       } catch (err) {
@@ -178,7 +176,7 @@ function MuDashboard({ selectedMu = null }) {
     };
 
     fetchUserDetails();
-  }, [selectedMu]);
+  }, [selectedMu, dataHandler]);
 
   if (!selectedMu || !selectedMu.objekt) {
     return <div className="mu-no-selection">Bitte wähle eine Militäreinheit aus, um Details anzuzeigen.</div>;

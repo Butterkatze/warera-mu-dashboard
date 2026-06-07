@@ -11,13 +11,18 @@ export class DataHandler {
         this.currentArticleId = initialArticleId; 
 
         this.ARTICLE_CACHE = 5 * 60 * 1000; 
-        this.MU_CACHE= 15 * 60 * 1000;     
+        this.MU_CACHE= 15 * 60 * 1000;
+        this.USER_CACHE = 60 * 60 * 1000;     
     }
 
     // Methode, um die ID jederzeit von außen live zu ändern
     setArticleId(newId) {
         this.currentArticleId = newId;
         console.log(`Klassen-Zustand geändert: Article ID ist jetzt ${this.currentArticleId}`);
+    }
+
+    setForceUpdate(forceUpdate = false) {
+      this.forceUpdate = forceUpdate;
     }
 
 /* ==========================================================================
@@ -43,10 +48,9 @@ export class DataHandler {
     return formatedArticle
     }
 
-    async getArticle(){
+    async #getArticle(){
     const now = Date.now();
     const articleCacheKey = `article_cache_${this.currentArticleId}`;
-
     const cached = localStorage.getItem(articleCacheKey);
 
     if (cached && !this.forceUpdate) {
@@ -58,10 +62,15 @@ export class DataHandler {
     }
 
     const formatedArticle = await this.#setArticleCache(articleCacheKey);
-
     return formatedArticle
     }
 
+    async getArticleWrapper(){
+      const articleData = await this.#getArticle();
+      this.setForceUpdate()
+      return articleData
+
+    }
 /* ==========================================================================
     MU Funktionen
     ========================================================================== */
@@ -83,7 +92,7 @@ export class DataHandler {
             members: muData.members,
             activeUpgradeLevels: {
                 "headquarters": muData.activeUpgradeLevels?.headquarters || 0,
-                "dormitories" : muData.activeUpgradeLevels?.dormitories ,
+                "dormitories" : muData.activeUpgradeLevels?.dormitories  || 0,
             },
             rankings: {
                 "muWeeklyDamages"   : muData.rankings?.muWeeklyDamages?.value,
@@ -103,32 +112,33 @@ export class DataHandler {
     #parseMUFromArticle(articleData){
 
         const geparsteGruppen = [];
-    
+        if (!articleData || !articleData.content) return geparsteGruppen;
+
         const parts = articleData.content.split(/<h2[^>]*>/);
         
         parts.forEach((part, index) => {
-        // Der erste Teil vor dem ersten <h2> hat keine Überschrift
-        if (index === 0) return; 
-        
-        // Extrahiere den Divisionsnamen (alles bis zum schließenden </h2>)
-        const nameMatch = part.match(/([^<]+)<\/h2>/);
-        if (!nameMatch) return;
-        
-        const divisionName = nameMatch[1].trim();
-        
-        const aktuelleGruppe = {
-            category: divisionName,
-            ids: []
-            };
+          // Der erste Teil vor dem ersten <h2> hat keine Überschrift
+          if (index === 0) return; 
+          
+          // Extrahiere den Divisionsnamen (alles bis zum schließenden </h2>)
+          const nameMatch = part.match(/([^<]+)<\/h2>/);
+          if (!nameMatch) return;
+          
+          const divisionName = nameMatch[1].trim();
+          
+          const aktuelleGruppe = {
+              category: divisionName,
+              ids: []
+              };
 
-        // MU ID Parser 
-        const muRegex = /muId&quot;:&quot;([a-f0-9]{24})/g;
-        let match;
-        while ((match = muRegex.exec(part)) !== null) {
-        aktuelleGruppe.ids.push(match[1]);
-        }
-        if (aktuelleGruppe.ids.length > 0) geparsteGruppen.push(aktuelleGruppe);
-        });
+          // MU ID Parser 
+          const muRegex = /muId&quot;:&quot;([a-f0-9]{24})/g;
+          let match;
+          while ((match = muRegex.exec(part)) !== null) {
+          aktuelleGruppe.ids.push(match[1]);
+          }
+          if (aktuelleGruppe.ids.length > 0) geparsteGruppen.push(aktuelleGruppe);
+          });
 
         return geparsteGruppen;
     }
@@ -230,15 +240,17 @@ export class DataHandler {
 
     async getMUFromArticle() {
 
-        const articleData = await this.getArticle();
+        const articleData = await this.#getArticle();
 
         /*#################    Parser   ####################*/
     
         const geparsteGruppen = this.#parseMUFromArticle(articleData);
 
         /*#################    Strucktur mit Division (gruppe ), Muid und Mu-daten (bzw MU objekt bauen)  ####################*/
-
-        return this.#getMU (geparsteGruppen);
+        
+        const MUs = await this.#getMU (geparsteGruppen);
+        this.setForceUpdate()
+        return MUs
     }   
 
 
@@ -279,8 +291,6 @@ export class DataHandler {
     const apiTasks = []; 
     const finalResults = []; 
     const now = Date.now();
-    
-    // Map, um doppelte Netzwerkanfragen für dieselbe User-ID zu verhindern
     const laufendeApiRequests = new Map();
 
     // Wir gehen durch jede übergebene User-ID
@@ -331,8 +341,9 @@ export class DataHandler {
           return { 
             _id: cleanId, 
             username: `Fehler (${String(cleanId).substring(0,4)})`, 
-            isActive: false,
-            members: [] 
+            avatarUrl: "",
+            level: 0,
+            isActive: false
           };
         }
       })();
@@ -406,6 +417,9 @@ export class DataHandler {
     };
 
     // 5. Arrays sauber gemappt zurückgeben
+
+    this.setForceUpdate()
+    
     return {
       managers: managerIds.map(id => zwingeUserObjekt(id, "Manager")),
       commanders: commanderIds.map(id => zwingeUserObjekt(id, "Commander")),
@@ -413,4 +427,121 @@ export class DataHandler {
     };
   }
 
-}   
+
+
+ /* ==========================================================================
+     NEU & ANGEPASST: MU Editor Integrations-Methoden
+     ========================================================================== */
+
+  #parseMarkdownFormat(rawText) {
+    const geparsteGruppen = [];
+    if (!rawText) return geparsteGruppen;
+
+    // Teilt den Text anhand von Markdown-H2 Überschriften (## Name)
+    const parts = rawText.split(/^##\s+/m);
+
+    parts.forEach((part, index) => {
+        // Der Teil vor dem ersten "##" enthält keine Division und wird ignoriert
+        if (index === 0) return;
+
+        // Die erste Zeile dieses Parts ist der Name der Division
+        const lines = part.split(/\r?\n/);
+        const divisionName = lines[0].trim();
+        if (!divisionName) return;
+
+        const aktuelleGruppe = {
+            category: divisionName,
+            ids: []
+        };
+
+        // Der restliche Text des Parts wird nach MU-IDs durchsucht
+        const restText = lines.slice(1).join("\n");
+        const muRegex = /muId&quot;:&quot;([a-f0-9]{24})/g;
+        let match;
+        
+        while ((match = muRegex.exec(restText)) !== null) {
+            aktuelleGruppe.ids.push(match[1]);
+        }
+
+        if (aktuelleGruppe.ids.length > 0) {
+            geparsteGruppen.push(aktuelleGruppe);
+        }
+    });
+
+    return geparsteGruppen;
+  }
+
+
+
+    /**
+     * Erzeugt den exakten Code für den WarEra-Artikel im gewünschten Format.
+     * @param {Array} spalten - Der Spalten-State aus dem MuEditor
+     * @returns {string} Generierter HTML/Markdown-Code für den Export
+     */
+    exportSpaltenToHtml(spalten = []) {
+      let html = "";
+      spalten.forEach((spalte, index) => {
+          if (!spalte.ids || spalte.ids.length === 0) return;
+          
+          // Füge einen Zeilenumbruch vor der nächsten Gruppe ein, falls es nicht die erste ist
+          if (index > 0) html += "\n";
+          
+          html += `## ${spalte.category}\n\n`;
+          
+          spalte.ids.forEach(id => {
+              // Generiert exakt die gewünschte Struktur mit Backslash davor und danach
+              html += `\\\n<span data-content-link="" data-content-type="mu" data-content-data="{&quot;muId&quot;:&quot;${id}&quot;,&quot;fullMatch&quot;:&quot;https://app.warera.io/mu/${id}&quot;}" data-original-text="https://app.warera.io/mu/${id}"></span> \\\n`;
+          });
+      });
+      return html;
+  }
+
+  /**
+   * Parst ein manuell reinkopiertes Text-Format (inklusive Backslashes) direkt.
+   * @param {string} htmlText - Reinkopierter String aus dem Artikel
+   * @returns {Array} Formatierte Gruppen für den Editor-State
+   */
+  /**
+   * ANGEPASST: Nutzt jetzt exklusiv den neuen Markdown-Parser für das manuelle UI-Feld
+   * @param {string} htmlText - Reinkopierter Text aus dem Artikel
+   * @returns {Array} Formatierte Gruppen für den Editor-State
+   */
+  parseRawHtmlContent(htmlText) {
+    if (!htmlText) return [];
+    // Ruft isoliert die neue Markdown-Logik auf. #parseMUFromArticle bleibt unangetastet!
+    return this.#parseMarkdownFormat(htmlText);
+  }
+
+  
+  /**
+     * Lädt Details für ein Array von MU-IDs parallel nach.
+     * Nutzt im Hintergrund die caching- und duplikatsichere Methode #getMU.
+     * Kann auch für einzelne IDs genutzt werden (z.B. [muId]).
+     * @param {Array<string>} muIds - Array aus 24-stelligen Hex-IDs
+     * @returns {Promise<Map<string, object>>} Eine Map mit id -> formatierte MU-Objektdaten
+     */
+  async getMultipleMusByIds(muIds = []) {
+    const bereinigteIds = [...new Set(muIds.filter(Boolean))]; // Duplikate direkt filtern
+    if (bereinigteIds.length === 0) return new Map();
+
+    try {
+        // Wir faken eine temporäre Gruppe, um die interne #getMU-Logik anzusteuern
+        const result = await this.#getMU([{ category: "bulk-fetch", ids: bereinigteIds }]);
+        
+        const resultMap = new Map();
+        if (result && result.length > 0) {
+            result.forEach(item => {
+                if (item && item.id && item.objekt) {
+                    resultMap.set(item.id.toString(), item.objekt);
+                }
+            });
+        }
+        return resultMap;
+    } catch (error) {
+        console.error("Fehler beim Bulk-Laden der MUs im DataHandler:", error);
+        return new Map();
+    }
+  }
+  
+}
+  

@@ -1,8 +1,7 @@
 import { useState} from 'react';
 import './tokenhandler.css';
-import { DataHandler } from './datahandler.js';
 
-export default function  Tokenhandler({ setApiKey, articleId, DEFAULT_ARTICLE_ID , setArticleId, onRefresh, onClose }) {
+export default function  Tokenhandler({ setApiKey, articleId, DEFAULT_ARTICLE_ID , setArticleId, onRefresh, onClose, dataHandler }) {
     const [localKey, setLocalKey] = useState(() => {
       try {
         return localStorage.getItem("warera_api_key") || '';
@@ -46,8 +45,8 @@ export default function  Tokenhandler({ setApiKey, articleId, DEFAULT_ARTICLE_ID
         localStorage.setItem('warera_api_key', cleanKey);
         localStorage.setItem('warera_article_id', finalArticleId);
         
-        const handlerInstance = new DataHandler(articleId);
-        await handlerInstance.getArticle();
+        dataHandler.setArticleId(articleId)
+        await dataHandler.getArticleWrapper();
         console.log("Login")
 
         setApiKey(cleanKey);

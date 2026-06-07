@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import './index.css';
 import Tokenhandler from './components/tokenhandler.jsx';
 import GroupedGrid from './components/groupedgrid.jsx';
@@ -9,8 +9,6 @@ import { DataHandler } from './components/datahandler.js';
 
 const FAKE_KEY = 'get_rickrolled'; 
 const DEFAULT_ARTICLE_ID = '6a1f025b37df43a8d01bb9a2';
-
-
 
 
 function App() {
@@ -30,6 +28,14 @@ function App() {
           return FAKE_KEY;
         }
       });
+  
+  const dataHandler = useMemo(() => new DataHandler(DEFAULT_ARTICLE_ID), []);
+
+  useEffect(() => {
+    if (dataHandler && typeof dataHandler.setArticleId === 'function') {
+      dataHandler.setArticleId(articleId);
+    }
+  }, [articleId, dataHandler]);
 
   const [showTokenPopup, setShowTokenPopup] = useState(apiKey === FAKE_KEY);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
@@ -42,21 +48,19 @@ function App() {
     const savedKey = localStorage.getItem("warera_api_key") || FAKE_KEY;
     const savedId = localStorage.getItem("warera_article_id") || DEFAULT_ARTICLE_ID;
     
-    // Wenn Daten da sind, versuchen wir die Daten direkt synchron aus dem Cache zu kratzen
     if (savedKey !== FAKE_KEY) {
-      const cacheKey = `mu_cache_${savedId}`; // Basiert auf deiner Logik im Datahandler
+      const cacheKey = `mu_cache_${savedId}`;
       try {
         const cachedData = localStorage.getItem(cacheKey);
         if (cachedData) {
-          // Falls dein Cache-Format ein direktes Array hergibt oder über getMUFromArticle kommt:
-          // Hinweis: Wenn getMUFromArticle asynchron baut, triggern wir das unten beim Start.
+          // Cache-Boot Vorbereitung (falls benötigt)
         }
       } catch (e) {
         console.error("Cache-Boot-Fehler", e);
       }
     }
     return [];
-  });
+  });    
 
 //##########################   fake funtions #####################/
 
@@ -108,9 +112,14 @@ function App() {
     if (!targetId) return;
     setIsLoading(true);
     try {
-      console.log("Event-gesteuertes Laden für ID:", targetId);
-      const handlerInstance = new DataHandler(targetId, forceUpdate);
-      const data = await handlerInstance.getMUFromArticle();
+      console.log("Event-gesteuertes Laden über globale Instanz für ID:", targetId);
+      
+      // Zustand der bestehenden Instanz updaten statt "new DataHandler()"
+      dataHandler.setForceUpdate(forceUpdate)
+      dataHandler.setArticleId(targetId);
+      
+
+      const data = await dataHandler.getMUFromArticle();
       setMuData(data);
     } catch (error) {
       console.error("Fehler beim Laden:", error);
@@ -118,6 +127,9 @@ function App() {
       setIsLoading(false);
     }
   };
+
+
+  
 
   const [hasCheckedInitialData, setHasCheckedInitialData] = useState(false);
   if (!showTokenPopup && !hasCheckedInitialData) {
@@ -143,70 +155,71 @@ function App() {
           onClose={() => {
             closePopup();
           }}
+          dataHandler={dataHandler}
         />
       )}
 
 
       <div className="page-container">
-      {/* Neuer Header-Container für die Nebeneinander-Anordnung */}
-      <div className="page-header">
-        <div className="page-header-text">
-          <h1>Militray Unit Dashboard</h1>
-          <p>Aktueller API-Key Status: {apiKey}</p>
-        </div>
-        
-        
+          <div className="page-header">
+            <div className="page-header-text">
+              <h1>Military Unit Dashboard</h1>
+              <p className="api-key-status">
+                <span className="api-key-label">Aktueller API-Key Status:</span> 
+                <code className="api-key-value">{apiKey}</code>
+              </p>
+            </div>
+            
+            <div className="page-actions">
+              <button 
+                className={`btn-secondary ${isEditorOpen ? 'is-active' : ''}`}
+                onClick={() => setIsEditorOpen(!isEditorOpen)}
+              >
+                {isEditorOpen ? "Editor Schließen" : "Layout-Umsortierer"}
+              </button>
 
-        <div className="page-actions">
+              <button 
+                className="btn-secondary-keychange" 
+                onClick={() => setShowTokenPopup(true)}
+              >
+                API-Token ändern
+              </button>
 
-          <button 
-              className="btn-secondary"
-              onClick={() => setIsEditorOpen(!isEditorOpen)}
-              style={{ backgroundColor: isEditorOpen ? '#ff4d4d' : '' }}
-            >
-              {isEditorOpen ? "Editor Schließen" : "Layout-Umsortierer"}
-          </button>
-
-          <button 
-            className="btn-secondary-keychange" 
-            onClick={() => setShowTokenPopup(true)}
-          >
-            API-Token ändern
-          </button>
-
-          {/* Manueller Refresh Button (Optional, aber extrem praktisch) */}
-          <button 
-              className="btn-secondary"
-              disabled={isLoading}
-              onClick={() => handleLoadData(articleId, true)}
-            >
-              {isLoading ? "Lädt..." : "Aktualisieren"}
-            </button>
-        </div>
+              <button 
+                className="btn-secondary"
+                disabled={isLoading}
+                onClick={() => handleLoadData(articleId, true)}
+              >
+                {isLoading ? "Lädt..." : "Aktualisieren"}
+              </button>
+            </div>
+          </div>
       </div>
-    </div>
-    
-    
-    
-    <hr className="color-border" style={{ margin: '25px 0', border: 'none', borderTop: '1px solid var(--color-border)' }} />
+      
+      {/* Die Trennlinie nutzt nun ausschließlich die CSS-Klasse */}
+      <hr className="color-border" />
 
     {/*######################################    Inhalt           #######################################*/}
     {isEditorOpen ? (
         <MuEditor 
           muData={muData} 
           onCancel={() => setIsEditorOpen(false)} 
+          dataHandler={dataHandler}
         />
       ) : selectedMu ? (
       <div className="dashboard-view-container">
         <button 
           className="btn-secondary" 
           style={{ marginBottom: '20px' }} 
-          onClick={handleBackToGrid} // Setzt den State zurück -> Grid wird wieder sichtbar
+          onClick={handleBackToGrid} 
         >
           ← Zurück zur Übersicht
         </button>
         
-        <MuDashboard selectedMu={selectedMu} />
+        <MuDashboard 
+          selectedMu={selectedMu} 
+          dataHandler={dataHandler}
+        />
       </div>
     ) : (
       /* WENN KEIN selectedMu existiert (null ist), zeigen wir das normale Grid */

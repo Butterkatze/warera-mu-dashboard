@@ -121,3 +121,108 @@
   color: var(--color-text-primary);
   margin-top: 25px;
 }
+
+
+/* --- Global Header Layout --- */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 30px;
+  padding: 10px 0;
+}
+
+.page-header-text h1 {
+  margin: 0 0 8px 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+/* API-Key Zeile */
+.api-key-status {
+  margin: 0;
+  font-size: 14px;
+  color: #a0aec0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.api-key-value {
+  background-color: #1a202c;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-family: monospace;
+  color: #e2e8f0;
+  max-width: 400px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* --- Button Group & Classes --- */
+.page-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px; /* Schafft gleichmäßigen Abstand zwischen den Buttons */
+}
+
+/* Basis-Styles für deine Button-Klassen (falls noch nicht global definiert) */
+.btn-secondary, 
+.btn-secondary-keychange {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  white-space: nowrap;
+}
+
+/* Spezifische Button-Farben */
+.btn-secondary {
+  background-color: #2d3748;
+  color: #ffffff;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: #4a5568;
+}
+
+.btn-secondary-keychange {
+  background-color: #4a5568;
+  color: #ffffff;
+}
+
+.btn-secondary-keychange:hover {
+  background-color: #718096;
+}
+
+/* Zustand: Wenn der Editor geöffnet ist (Ersetzt das Inline-Style) */
+.btn-secondary.is-active {
+  background-color: #ff4d4d;
+  color: #ffffff;
+}
+
+.btn-secondary.is-active:hover {
+  background-color: #e03e3e;
+}
+
+/* Disabled Status für den Refresh-Button */
+.btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* --- Trennlinie --- */
+.color-border {
+  margin: 25px 0;
+  border: none;
+  border-top: 1px solid var(--color-border, #2d3748);
+}
+
