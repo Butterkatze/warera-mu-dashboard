@@ -8,7 +8,6 @@ export class DataHandler {
         this.forceUpdate = forceUpdate
         
         // const ARTICLE_ID = '6a1f025b37df43a8d01bb9a2'; 
-        // HIER sichern wir die ID direkt in der Klasse
         this.currentArticleId = initialArticleId; 
 
         this.ARTICLE_CACHE = 5 * 60 * 1000; 
@@ -21,18 +20,13 @@ export class DataHandler {
         console.log(`Klassen-Zustand geändert: Article ID ist jetzt ${this.currentArticleId}`);
     }
 
-
-
-
 /* ==========================================================================
     Article Funktionen
     ========================================================================== */
 
     async  #setArticleCache(articleCacheKey) {
-
-    const client = getWarEraClient();
   
-    const response = await client.article.getArticleById({ articleId: this.currentArticleId });
+    const response = await this.client.article.getArticleById({ articleId: this.currentArticleId });
     /* Daten Formatierne*/
     const articleData = response?.result?.data || response;
     const formatedArticle = {
@@ -150,14 +144,19 @@ export class DataHandler {
       
         geparsteGruppen.forEach(gruppe => {
           gruppe.ids.forEach(id => {
+
+
+
             const cacheKey = `mu_cache_${id}`;
             const cached = localStorage.getItem(cacheKey);
+
+
       
             // A) Cache-Prüfung (Duplikate aus dem Cache sind kein Problem)
             if (cached && !this.forceUpdate) {
               try {
                 const { data, timestamp } = JSON.parse(cached);
-                if (now - timestamp < this.MU_CACHE_TIME) {
+                if (now - timestamp < this.MU_CACHE) {
                   finalResults.push({
                     spaltenName: gruppe.category,
                     id: id,
@@ -242,4 +241,176 @@ export class DataHandler {
         return this.#getMU (geparsteGruppen);
     }   
 
-}
+
+
+
+
+/* ==========================================================================
+    MU Funktionen
+    ========================================================================== */
+
+
+    async #setUserCache(USER_ID, userCacheKey) {
+    
+      const now = Date.now();
+      const response = await this.client.user.getUserLite({ userId : USER_ID });
+      const userData = response?.result?.data || response;
+
+
+      const formatedUser = {
+
+          _id: userData._id,
+          avatarUrl: userData.avatarUrl,
+          username: userData.username,
+          country: userData.country,
+          level: userData.leveling?.level,
+          isActive: userData.isActive,
+          weeklyUserDamages: userData.rankings?.weeklyUserDamages?.value,
+      }
+         
+
+      /* Cache anlegen*/
+      localStorage.setItem(userCacheKey, JSON.stringify({ data: formatedUser, timestamp: now }));
+      return formatedUser
+  }
+
+
+  async #getUser(userIds = []) {
+    const apiTasks = []; 
+    const finalResults = []; 
+    const now = Date.now();
+    
+    // Map, um doppelte Netzwerkanfragen für dieselbe User-ID zu verhindern
+    const laufendeApiRequests = new Map();
+
+    // Wir gehen durch jede übergebene User-ID
+    userIds.forEach(id => {
+      // Absicherung, falls IDs fälschlicherweise Objekte oder null/undefined sind
+      const cleanId = typeof id === 'object' ? (id._id || id.id) : id;
+      if (!cleanId) return;
+
+      const userCacheKey = `user_cache_${cleanId}`;
+      const cached = localStorage.getItem(userCacheKey);
+
+      // A) Cache-Prüfung (sofern kein forceUpdate erzwungen wird)
+      if (cached && !this.forceUpdate) {
+        try {
+          const { data, timestamp } = JSON.parse(cached);
+          // Nutzt die für User definierte Cache-Zeit (z.B. USER_CACHE, falls vorhanden, sonst 1 Std)
+          const cacheDauer = this.USER_CACHE || 3600000; 
+
+          if (now - timestamp < cacheDauer) {
+            finalResults.push(data); // Drückt das formatierte User-Objekt direkt ins Ergebnis
+            return; 
+          }
+        } catch (e) {
+          console.error("User Cache Parse Fehler:", e);
+        }
+      }
+
+      // B) Duplikat-Schutz für laufende Netzwerk-Anfragen:
+      // Wurde für diese User-ID im aktuellen Schleifendurchlauf schon ein API-Task erstellt?
+      if (laufendeApiRequests.has(cleanId)) {
+        // Wir hängen uns an dasselbe Promise an. Die API wird nicht doppelt belastet.
+        const duplicateTask = (async () => {
+          return await laufendeApiRequests.get(cleanId);
+        })();
+        
+        apiTasks.push(duplicateTask);
+        return;
+      }
+
+      // C) Erster API-Request für diese User-ID (Kein Duplikat im aktuellen Lauf)
+      const fetchTask = (async () => {
+        try {
+          // Ruft deine bestehende Methode auf, die formatedUser generiert und speichert
+          return await this.#setUserCache(cleanId, userCacheKey);
+        } catch (error) {
+          console.error(`Fehler bei User-ID ${cleanId}:`, error);
+          // Fallback-Objekt, damit die App nicht abstürzt, wenn ein User-Fetch fehlschlägt
+          return { 
+            _id: cleanId, 
+            username: `Fehler (${String(cleanId).substring(0,4)})`, 
+            isActive: false,
+            members: [] 
+          };
+        }
+      })();
+
+      // Das laufende Promise in der Map für andere Duplikate reservieren
+      laufendeApiRequests.set(cleanId, fetchTask);
+      apiTasks.push(fetchTask);
+    });
+
+    /* #################  User-API-Anfragen gleichzeitig feuern  #################### */
+    if (apiTasks.length > 0) {
+      const apiResults = await Promise.all(apiTasks);
+      finalResults.push(...apiResults);
+    }
+
+    // Liefert das saubere Array aus formatierten User-Objekten zurück
+    return finalResults.filter(user => user !== null);
+  }
+
+
+
+
+  async getMUUserData(muId) {
+    if (!muId) return { managers: [], commanders: [], members: [] };
+
+    const muResult = await this.#getMU([{ category: "temporary", ids: [muId] }]);
+
+    if (!muResult || muResult.length === 0 || !muResult[0].objekt) {
+      console.warn(`MU mit der ID ${muId} konnte nicht geladen werden.`);
+      return { managers: [], commanders: [], members: [] };
+    }
+
+    const muObjekt = muResult[0].objekt;
+
+    // 1. IDs extrahieren und strikt zu Strings konvertieren
+    const rawManagers = muObjekt.managers || [];
+    const managerIds = (Array.isArray(rawManagers) ? rawManagers : [rawManagers]).map(id => id?.toString()).filter(Boolean);
+    const commanderIds = (muObjekt.commanders || []).map(id => id?.toString()).filter(Boolean);
+    const memberIds = (muObjekt.members || []).map(id => id?.toString()).filter(Boolean);
+
+    // 2. Alle eindeutigen IDs laden
+    const alleUserIds = new Set([...managerIds, ...commanderIds, ...memberIds]);
+    const geladeneUser = await this.#getUser(Array.from(alleUserIds));
+
+    // 3. Wir bauen uns eine Map aus den geladenen Usern
+    // Wichtig: Wir filtern hier alles heraus, was kein echtes Objekt mit username ist!
+    const userMap = new Map();
+    geladeneUser.forEach(user => {
+      if (user && typeof user === 'object' && user._id) {
+        userMap.set(user._id.toString(), user);
+      }
+    });
+
+    // 4. Helfer-Funktion: Holt das Objekt aus der Map. 
+    // Falls die API für die ID versagt hat, BAUT sie ein gültiges Objekt zusammen,
+    // damit das Dashboard NIEMALS wieder nur eine nackte ID sieht!
+    const zwingeUserObjekt = (id, fallbackRolle) => {
+      const existierenderUser = userMap.get(id);
+      if (existierenderUser && existierenderUser.username) {
+        return existierenderUser;
+      }
+      
+      // Das hier fängt den Fehler auf deinem Screenshot ab!
+      return {
+        _id: id,
+        username: `${fallbackRolle} (${id.substring(0, 6)})`,
+        avatarUrl: "", // Platzhalter-Fragezeichen triggern
+        level: 0,
+        isActive: false
+      };
+    };
+
+    // 5. Arrays sauber gemappt zurückgeben
+    return {
+      managers: managerIds.map(id => zwingeUserObjekt(id, "Manager")),
+      commanders: commanderIds.map(id => zwingeUserObjekt(id, "Commander")),
+      members: memberIds.map(id => zwingeUserObjekt(id, "Mitglied"))
+    };
+  }
+
+}   

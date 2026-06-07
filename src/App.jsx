@@ -1,8 +1,8 @@
-import { useState } from 'react';
-//import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import './index.css';
 import Tokenhandler from './components/tokenhandler.jsx';
 import GroupedGrid from './components/groupedgrid.jsx';
+import MuDashboard from './components/mudashboard.jsx';
 import { DataHandler } from './components/datahandler.js';
 
 
@@ -33,6 +33,8 @@ function App() {
   const [showTokenPopup, setShowTokenPopup] = useState(apiKey === FAKE_KEY);
   const [isLoading, setIsLoading] = useState(false);
 
+  const [selectedMu, setSelectedMu] = useState(null);
+
 
   const [muData, setMuData] = useState(() => {
     const savedKey = localStorage.getItem("warera_api_key") || FAKE_KEY;
@@ -53,6 +55,51 @@ function App() {
     }
     return [];
   });
+
+//##########################   fake funtions #####################/
+
+  useEffect(() => {
+    if (selectedMu) {
+      const currentId = selectedMu.id;
+      if (window.history.state?.muId !== currentId) {
+        window.history.pushState({ view: 'dashboard', muId: currentId }, '');
+      }
+    }
+
+    // 2. Event-Listener für die Zurück-Taste (popstate)
+    const handlePopState = (event) => {
+      const state = event.state;
+
+      if (state && state.view === 'dashboard' && state.muId) {
+        // VORWÄRTS: Der Browser-State hat eine ID? Dann suchen wir die passende MU aus muData
+        const passendeMu = muData.find(eintrag => eintrag.id === state.muId);
+        if (passendeMu) {
+          setSelectedMu(passendeMu);
+        } else {
+          // Fallback, falls muData noch leer ist oder frisch lädt
+          setSelectedMu(null);
+        }
+      } else {
+        // ZURÜCK: Kein gültiger Dashboard-State? Zurück zur Übersicht!
+        setSelectedMu(null);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [selectedMu, muData]); // muData als Dependency, damit wir die Objekte beim Vorwärtsgehen finden
+
+  // Hilfsfunktion für den manuellen "Zurück"-Button im Dashboard
+  const handleBackToGrid = () => {
+    if (window.history.state?.view === 'dashboard') {
+      window.history.back(); // Löst das popstate-Event aus
+    } else {
+      setSelectedMu(null);
+    }
+  };
 
 
   const handleLoadData = async (targetId, forceUpdate = false) => {
@@ -81,7 +128,7 @@ function App() {
     setShowTokenPopup(false);
     handleLoadData(articleId);
   };
-
+  //####################### html ##################/
     return (
     <>
       {showTokenPopup && (
@@ -131,11 +178,29 @@ function App() {
     <hr className="color-border" style={{ margin: '25px 0', border: 'none', borderTop: '1px solid var(--color-border)' }} />
 
     {/* Wenn wir frisch reinkommen und noch laden */}
-    {isLoading && muData.length === 0 ? (
-          <div className="grid-loading">Militäreinheiten werden geladen...</div>
-        ) : (
-          <GroupedGrid muData={muData} />
-        )}
+    {selectedMu ? (
+      <div className="dashboard-view-container">
+        <button 
+          className="btn-secondary" 
+          style={{ marginBottom: '20px' }} 
+          onClick={handleBackToGrid} // Setzt den State zurück -> Grid wird wieder sichtbar
+        >
+          ← Zurück zur Übersicht
+        </button>
+        
+        <MuDashboard selectedMu={selectedMu} />
+      </div>
+    ) : (
+      /* WENN KEIN selectedMu existiert (null ist), zeigen wir das normale Grid */
+      isLoading && muData.length === 0 ? (
+        <div className="grid-loading">Militäreinheiten werden geladen...</div>
+      ) : (
+        <GroupedGrid 
+          muData={muData} 
+          onSelectMu={setSelectedMu}
+        />
+      )
+    )}
     </>
     );
 }

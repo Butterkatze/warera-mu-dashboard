@@ -1,11 +1,14 @@
 import './groupedgrid.css';
 
 // 1. Die Item-Komponente mit neuem Layout (Bild links, Text/Stats rechts)
-function GridItem({ image, name, stats = {} }) {
+function GridItem({ image, name, stats = {}, onClick }) {
   const statEntries = Object.entries(stats).slice(0, 4);
 
   return (
-    <div className="grid-item">
+    <div 
+      className="grid-item clickable" // <--- "clickable" Klasse hinzugefügt
+      onClick={onClick}                // <--- Klick-Event registriert
+  >
       {/* Linke Seite: Bild */}
       <div className="grid-item-image-wrapper">
         {image ? (
@@ -32,7 +35,7 @@ function GridItem({ image, name, stats = {} }) {
     </div>
   );
 }
-function GroupedGrid({ muData = [] }) {
+function GroupedGrid({ muData = [], onSelectMu }) {
   
   if (!muData || muData.length === 0) {
     return <div className="grid-loading">Militäreinheiten werden geladen...</div>;
@@ -68,6 +71,7 @@ function GroupedGrid({ muData = [] }) {
                   "Weekly Dmg": eintrag.objekt?.rankings?.muWeeklyDamages?.toLocaleString() || "0",
                   "Members": eintrag.objekt?.members?.length || 0
                 }}
+                onClick={() =>  onSelectMu && onSelectMu(eintrag) }
               />
             ))}
           </div>

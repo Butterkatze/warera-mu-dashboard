@@ -139,3 +139,26 @@
     font-weight: bold;
   }
   
+/* ==========================================================================
+   Klickbare MU-Karten Erweiterung
+   ========================================================================== */
+
+/* Macht die gesamte Karte als Klick-Ziel erkennbar */
+.grid-item.clickable {
+  cursor: pointer;
+  user-select: none; /* Verhindert unschönes Markieren von Text beim Doppelklick */
+}
+
+/* Verstärkter Hover-Effekt für klickbare Karten */
+.grid-item.clickable:hover {
+  transform: translateY(-4px);
+  border-color: var(--color-primary);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+/* Subtiler Effekt, wenn man die Karte gedrückt hält (Click-Feedback) */
+.grid-item.clickable:active {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
