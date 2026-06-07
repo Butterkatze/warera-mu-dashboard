@@ -189,7 +189,7 @@ export default function MuEditor({ muData = [], onCancel, dataHandler, onRefresh
   return (
     <div className="editor-container">
       <div className="editor-header">
-        <h2>MU-Umsortierer & Artikel-Designer</h2>
+        <h2>Divisons-Editor</h2>
       </div>
 
       <div className="editor-accordion">
