@@ -330,3 +330,12 @@
     font-size: 14px;
     color: var(--color-text-primary, #ffffff);
   }
+
+  .sortable-header {
+    cursor: pointer;
+    user-select: none; /* Verhindert unschönes Markieren des Textes bei schnellen Klicks */
+  }
+  
+  .sortable-header:hover {
+    background-color: rgba(255, 255, 255, 0.05); /* Dezenter Hover-Effekt */
+  }

@@ -103,7 +103,54 @@ function MuManagement({ managers = [], commanders = [] }) {
 // 3. Komponente: User- / Mitgliederliste (Unten)
 // ==========================================================================
 function MuUserList({ members = [], muUsers = [], isLoadingUsers = false }) {
+  // 1. States für Sortier-Spalte und Richtung definieren
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'desc' });
+
   const displayList = muUsers.length > 0 ? muUsers : members;
+
+  // 2. Sortier-Handler: Wechselt Richtung oder Spalte bei Klick
+  const requestSort = (key) => {
+    let direction = 'desc';
+    if (sortConfig.key === key && sortConfig.direction === 'desc') {
+      direction = 'asc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  // 3. Die Daten basierend auf dem State sortieren
+  const sortedList = [...displayList].sort((a, b) => {
+    if (!sortConfig.key) return 0; // Keine Sortierung gewählt
+
+    const isAObj = typeof a === 'object';
+    const isBObj = typeof b === 'object';
+
+    let valA, valB;
+
+    // Werte je nach Spalte extrahieren
+    if (sortConfig.key === 'name') {
+      valA = isAObj ? (a.username || '').toLowerCase() : String(a).toLowerCase();
+      valB = isBObj ? (b.username || '').toLowerCase() : String(b).toLowerCase();
+    } else if (sortConfig.key === 'damage') {
+      valA = isAObj ? (a.weeklyUserDamages || 0) : 0;
+      valB = isBObj ? (b.weeklyUserDamages || 0) : 0;
+    } else if (sortConfig.key === 'level') {
+      valA = isAObj ? (a.level || 0) : 0;
+      valB = isBObj ? (b.level || 0) : 0;
+    } else if (sortConfig.key === 'active') {
+      valA = isAObj ? (a.isActive ? 1 : 0) : -1;
+      valB = isBObj ? (b.isActive ? 1 : 0) : -1;
+    }
+
+    if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
+    if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  // Helper, um den aktiven Sortier-Pfeil im Header anzuzeigen
+  const getClassNamesFor = (name) => {
+    if (sortConfig.key !== name) return '';
+    return sortConfig.direction === 'asc' ? ' ▲' : ' ▼';
+  };
 
   return (
     <div className="mu-userlist-box">
@@ -111,21 +158,30 @@ function MuUserList({ members = [], muUsers = [], isLoadingUsers = false }) {
       
       {isLoadingUsers && <div className="mu-loading-inline">Lade detaillierte User-Daten...</div>}
       
-      {displayList.length === 0 ? (
+      {sortedList.length === 0 ? (
         <p className="mu-no-data">Keine Mitglieder in dieser Einheit gefunden.</p>
       ) : (
         <div className="mu-user-table-wrapper">
           <table className="mu-user-table">
             <thead>
               <tr>
-                <th>Name / ID</th>
-                <th>Weekly Damage</th>
-                <th>Userlevel</th>
-                <th>Aktiver Bürger</th>
+                {/* CSS-Tipp: Füge der Klasse '.sortable-header' im CSS 'cursor: pointer' hinzu */}
+                <th onClick={() => requestSort('name')} className="sortable-header">
+                  Name / ID{getClassNamesFor('name')}
+                </th>
+                <th onClick={() => requestSort('damage')} className="sortable-header">
+                  Weekly Damage{getClassNamesFor('damage')}
+                </th>
+                <th onClick={() => requestSort('level')} className="sortable-header">
+                  Userlevel{getClassNamesFor('level')}
+                </th>
+                <th onClick={() => requestSort('active')} className="sortable-header">
+                  Aktiver Bürger{getClassNamesFor('active')}
+                </th>
               </tr>
             </thead>
             <tbody>
-              {displayList.map((user, idx) => {
+              {sortedList.map((user, idx) => {
                 const isObject = typeof user === 'object';
                 const userName = isObject ? user.username : `User-ID: ${user}`;
                 const userRank = isObject && user.level ? `Level ${user.level}` : 'Mitglied';
