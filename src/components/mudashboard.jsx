@@ -10,20 +10,28 @@ function MuGeneralStats({ rankings = {}, activeUpgradeLevels = {} }) {
       <h3 className="mu-section-title">Einheits-Statistiken</h3>
       <div className="mu-stats-grid">
         <div className="mu-stat-entry">
-          <span className="mu-label">Vermögen (Wealth):</span>
-          <span className="mu-value text-gold">{rankings.muWealth?.toLocaleString() || '0'}</span>
+          <span className="mu-label">Kontostand:</span>
+          <span className="mu-value text-gold">{rankings.muWealth?.toLocaleString() || '0'} BTC</span>
         </div>
         <div className="mu-stat-entry">
           <span className="mu-label">Wöchentlicher Schaden:</span>
           <span className="mu-value">{rankings.muWeeklyDamages?.toLocaleString() || '0'}</span>
         </div>
         <div className="mu-stat-entry">
-          <span className="mu-label">Reputation:</span>
-          <span className="mu-value">{rankings.muReputation?.toLocaleString() || '0'}</span>
+          <span className="mu-label">HQ:</span>
+          <span className="mu-value">
+            {activeUpgradeLevels.headquarters 
+              ? `Level ${activeUpgradeLevels.headquarters}` 
+              : 'Nicht aktiv'}
+          </span>
         </div>
         <div className="mu-stat-entry">
-          <span className="mu-label">HQ Level:</span>
-          <span className="mu-value">{activeUpgradeLevels.headquarters || '0'}</span>
+          <span className="mu-label">Barraken:</span>
+          <span className="mu-value">
+            {activeUpgradeLevels.dormitories 
+              ? `Level ${activeUpgradeLevels.dormitories}` 
+              : 'Kann nicht geladen werden'}
+          </span>
         </div>
       </div>
     </div>

@@ -1,7 +1,7 @@
 import { useState} from 'react';
 import './tokenhandler.css';
 
-export default function  Tokenhandler({ setApiKey, articleId, DEFAULT_ARTICLE_ID , setArticleId, onRefresh, onClose, dataHandler }) {
+export default function  Tokenhandler({ setApiKey, DEFAULT_ARTICLE_ID , setArticleId, onRefresh, onClose, dataHandler }) {
     const [localKey, setLocalKey] = useState(() => {
       try {
         return localStorage.getItem("warera_api_key") || '';
@@ -26,17 +26,13 @@ export default function  Tokenhandler({ setApiKey, articleId, DEFAULT_ARTICLE_ID
     const handleValidate = async (e) => {
       e.preventDefault();
       const cleanKey = localKey.trim();
-      const finalArticleId = localArticleId.trim();
+      const finalArticleId = localArticleId.trim() || DEFAULT_ARTICLE_ID;
       
       
 
       if (!cleanKey && !noKey) {
         setStatus({ type: 'error', message: 'Bitte gib einen API-Token ein.' });
         return;
-      }
-
-      if (!finalArticleId) {
-        setArticleId(DEFAULT_ARTICLE_ID);
       }
       
       setStatus({ type: 'loading', message: '...' });
@@ -45,7 +41,8 @@ export default function  Tokenhandler({ setApiKey, articleId, DEFAULT_ARTICLE_ID
         localStorage.setItem('warera_api_key', cleanKey);
         localStorage.setItem('warera_article_id', finalArticleId);
         
-        dataHandler.setArticleId(articleId)
+        dataHandler.setArticleId(finalArticleId)
+        dataHandler.updateClient();
         await dataHandler.getArticleWrapper();
         console.log("Login")
 

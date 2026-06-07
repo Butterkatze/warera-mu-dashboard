@@ -148,7 +148,6 @@ function App() {
       {showTokenPopup && (
         <Tokenhandler 
           setApiKey={setApiKey} 
-          articleId = {articleId}
           DEFAULT_ARTICLE_ID = {DEFAULT_ARTICLE_ID}
           setArticleId ={setArticleId}
           onRefresh={(newId) => handleLoadData(newId)}
@@ -164,35 +163,31 @@ function App() {
           <div className="page-header">
             <div className="page-header-text">
               <h1>Military Unit Dashboard</h1>
-              <p className="api-key-status">
-                <span className="api-key-label">Aktueller API-Key Status:</span> 
-                <code className="api-key-value">{apiKey}</code>
-              </p>
             </div>
             
             <div className="page-actions">
-              <button 
-                className={`btn-secondary ${isEditorOpen ? 'is-active' : ''}`}
-                onClick={() => setIsEditorOpen(!isEditorOpen)}
-              >
-                {isEditorOpen ? "Editor Schließen" : "Layout-Umsortierer"}
-              </button>
+            <button 
+              className={`btn-header ${isEditorOpen ? 'is-active' : ''}`}
+              onClick={() => setIsEditorOpen(!isEditorOpen)}
+            >
+              {isEditorOpen ? "Editor Schließen" : "Divisions-Editor"}
+            </button>
 
-              <button 
-                className="btn-secondary-keychange" 
-                onClick={() => setShowTokenPopup(true)}
-              >
-                API-Token ändern
-              </button>
+            <button 
+              className="btn-header btn-header-keychange" 
+              onClick={() => setShowTokenPopup(true)}
+            >
+              API-Token ändern
+            </button>
 
-              <button 
-                className="btn-secondary"
-                disabled={isLoading}
-                onClick={() => handleLoadData(articleId, true)}
-              >
-                {isLoading ? "Lädt..." : "Aktualisieren"}
-              </button>
-            </div>
+            <button 
+              className="btn-header btn-header-refresh"
+              disabled={isLoading}
+              onClick={() => handleLoadData(articleId, true)}
+            >
+              {isLoading ? "Lädt..." : "Aktualisieren"}
+            </button>
+          </div>
           </div>
       </div>
       
@@ -205,6 +200,7 @@ function App() {
           muData={muData} 
           onCancel={() => setIsEditorOpen(false)} 
           dataHandler={dataHandler}
+          onRefresh={() => handleLoadData(articleId)}
         />
       ) : selectedMu ? (
       <div className="dashboard-view-container">

@@ -25,6 +25,11 @@ export class DataHandler {
       this.forceUpdate = forceUpdate;
     }
 
+    updateClient() {
+      this.client = getWarEraClient();
+      console.log("API-Client im DataHandler wurde mit neuem Token aktualisiert.");
+    }
+
 /* ==========================================================================
     Article Funktionen
     ========================================================================== */
@@ -239,6 +244,27 @@ export class DataHandler {
 
 
     async getMUFromArticle() {
+
+      //################ Falls Custom Layout Existiert ##################
+
+      const customCacheKey = `custom_layout_${this.currentArticleId}`;
+        const customLayoutRaw = localStorage.getItem(customCacheKey);
+
+        // Am Anfang und bei normalem Laden: Wenn ein Custom-Layout existiert, nutze es!
+        if (customLayoutRaw) {
+            try {
+                const { spalten } = JSON.parse(customLayoutRaw);
+                console.log("Custom-Layout im Speicher gefunden. Lade modifizierte Struktur...");
+                
+                const MUs = await this.#getMU(spalten);
+                this.setForceUpdate();
+                return MUs;
+            } catch (e) {
+                console.error("Fehler beim Parsen des Custom-Layouts, weiche auf API aus:", e);
+            }
+        }
+
+
 
         const articleData = await this.#getArticle();
 
@@ -512,7 +538,7 @@ export class DataHandler {
     return this.#parseMarkdownFormat(htmlText);
   }
 
-  
+
   /**
      * Lädt Details für ein Array von MU-IDs parallel nach.
      * Nutzt im Hintergrund die caching- und duplikatsichere Methode #getMU.
@@ -543,5 +569,30 @@ export class DataHandler {
     }
   }
   
+
+
+
+/* ==========================================================================
+   Lokales Layout-Caching (Steuerung exklusiv über Editor-Buttons)
+   ========================================================================== */
+
+    /**
+     * Speichert ein manipuliertes Layout lokal ab.
+     * Wird ein leeres Array übergeben, wird das Custom-Layout gelöscht.
+     * @param {Array} spalten - Die Struktur aus dem Editor
+     */
+    saveCustomLayout(spalten = []) {
+      const cacheKey = `custom_layout_${this.currentArticleId}`;
+      if (!spalten || spalten.length === 0) {
+          localStorage.removeItem(cacheKey);
+          console.log("Custom-Layout wurde gelöscht. Artikel-Standard ist wieder aktiv.");
+          return;
+      }
+      localStorage.setItem(cacheKey, JSON.stringify({
+          spalten,
+          timestamp: Date.now()
+      }));
+      console.log("Custom-Layout erfolgreich lokal gespeichert.");
+    }
+
 }
-  

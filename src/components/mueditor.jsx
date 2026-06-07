@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import './mueditor.css';
 
-export default function MuEditor({ muData = [], onCancel, dataHandler }) {
+export default function MuEditor({ muData = [], onCancel, dataHandler, onRefresh }) {
   
   const [spalten, setSpalten] = useState(() => {
     if (muData && muData.length > 0) {
@@ -166,6 +166,26 @@ export default function MuEditor({ muData = [], onCancel, dataHandler }) {
     }
   };
 
+  // NEU: Eigenes Layout manuell aktivieren
+  const handleApplyLayout = () => {
+    if (dataHandler) {
+      dataHandler.saveCustomLayout(spalten);
+      setCopySuccess("Layout auf der Übersicht angewendet! ✓");
+      if (typeof onRefresh === 'function') onRefresh(); 
+      setTimeout(() => setCopySuccess(""), 3500);
+    }
+  };
+
+  // NEU: Eigenes Layout manuell vernichten
+  const handleResetLayout = () => {
+    if (dataHandler) {
+      dataHandler.saveCustomLayout([]); // Übergibt leeres Array -> löscht aus Storage
+      setCopySuccess("Eigenes Layout gelöscht! Artikel-Standard aktiv. ✓");
+      if (typeof onRefresh === 'function') onRefresh(); 
+      setTimeout(() => setCopySuccess(""), 3500);
+    }
+  };
+
   return (
     <div className="editor-container">
       <div className="editor-header">
@@ -323,8 +343,17 @@ export default function MuEditor({ muData = [], onCancel, dataHandler }) {
         )}
 
         <button type="button" className="btn-editor-secondary small" onClick={onCancel}>
-          Abbrechen
+          Editor Schließen
         </button>
+
+        <button type="button" className="btn-editor-danger small" onClick={handleResetLayout}>
+          Eigenes Layout löschen
+        </button>
+
+        <button type="button" className="btn-editor-success small" onClick={handleApplyLayout}>
+          Eigenes Layout anwenden
+        </button>
+
         <button 
           type="button" 
           className="btn-editor-primary small" 
