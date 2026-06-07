@@ -3,6 +3,7 @@ import './index.css';
 import Tokenhandler from './components/tokenhandler.jsx';
 import GroupedGrid from './components/groupedgrid.jsx';
 import MuDashboard from './components/mudashboard.jsx';
+import MuEditor from './components/mueditor.jsx';
 import { DataHandler } from './components/datahandler.js';
 
 
@@ -31,6 +32,7 @@ function App() {
       });
 
   const [showTokenPopup, setShowTokenPopup] = useState(apiKey === FAKE_KEY);
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const [selectedMu, setSelectedMu] = useState(null);
@@ -153,7 +155,18 @@ function App() {
           <p>Aktueller API-Key Status: {apiKey}</p>
         </div>
         
+        
+
         <div className="page-actions">
+
+          <button 
+              className="btn-secondary"
+              onClick={() => setIsEditorOpen(!isEditorOpen)}
+              style={{ backgroundColor: isEditorOpen ? '#ff4d4d' : '' }}
+            >
+              {isEditorOpen ? "Editor Schließen" : "Layout-Umsortierer"}
+          </button>
+
           <button 
             className="btn-secondary-keychange" 
             onClick={() => setShowTokenPopup(true)}
@@ -177,8 +190,13 @@ function App() {
     
     <hr className="color-border" style={{ margin: '25px 0', border: 'none', borderTop: '1px solid var(--color-border)' }} />
 
-    {/* Wenn wir frisch reinkommen und noch laden */}
-    {selectedMu ? (
+    {/*######################################    Inhalt           #######################################*/}
+    {isEditorOpen ? (
+        <MuEditor 
+          muData={muData} 
+          onCancel={() => setIsEditorOpen(false)} 
+        />
+      ) : selectedMu ? (
       <div className="dashboard-view-container">
         <button 
           className="btn-secondary" 

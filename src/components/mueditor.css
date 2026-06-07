@@ -1,0 +1,173 @@
+.editor-container {
+    background-color: #1a1f2c;
+    border: 1px solid #2d3748;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 25px;
+    color: #fff;
+  }
+  
+  .editor-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #2d3748;
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+  }
+  
+  .editor-io-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+  
+  .io-box textarea {
+    width: 100%;
+    height: 100px;
+    background-color: #11141d;
+    border: 1px solid #2d3748;
+    border-radius: 4px;
+    color: #00ffcc;
+    font-family: monospace;
+    padding: 10px;
+    margin: 10px 0;
+    resize: none;
+  }
+  
+  .editor-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  
+  .editor-controls input {
+    flex: 1;
+    background: #11141d;
+    border: 1px solid #2d3748;
+    padding: 10px;
+    color: #fff;
+    border-radius: 4px;
+  }
+  
+  .editor-workspace {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 20px;
+    min-height: 450px;
+  }
+  
+  .mu-pool {
+    background-color: #11141d;
+    border-radius: 6px;
+    padding: 15px;
+    border: 1px solid #2d3748;
+  }
+  
+  .hint {
+    font-size: 11px;
+    color: #888;
+  }
+  
+  .pool-items {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 15px;
+    max-height: 400px;
+    overflow-y: auto;
+  }
+  
+  .draggable-mu-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background-color: #232a3b;
+    padding: 10px;
+    border-radius: 4px;
+    cursor: grab;
+    border: 1px solid transparent;
+    user-select: none;
+  }
+  
+  .draggable-mu-card:active {
+    cursor: grabbing;
+  }
+  
+  .draggable-mu-card:hover {
+    border-color: #00ffcc;
+  }
+  
+  .draggable-mu-card img {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+  }
+  
+  .draggable-mu-card.in-column {
+    justify-content: space-between;
+    background-color: #1a1f2c;
+    width: 100%;
+  }
+  
+  .card-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .editor-columns-grid {
+    display: flex;
+    gap: 20px;
+    overflow-x: auto;
+    padding-bottom: 10px;
+    align-items: flex-start;
+  }
+  
+  .editor-column {
+    width: 300px;
+    background-color: #11141d;
+    border: 1px solid #2d3748;
+    border-radius: 6px;
+    flex-shrink: 0;
+  }
+  
+  .column-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid #2d3748;
+    background-color: #161b26;
+  }
+  
+  .column-dropzone {
+    min-height: 200px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background-color: rgba(255, 255, 255, 0.02);
+  }
+  
+  .placeholder-text {
+    text-align: center;
+    color: #444;
+    margin-top: 40px;
+    border: 2px dashed #2d3748;
+    padding: 20px;
+    border-radius: 4px;
+  }
+  
+  .btn-delete, .btn-remove {
+    background: none;
+    border: none;
+    color: #ff4d4d;
+    cursor: pointer;
+  }
+  
+  .btn-remove {
+    font-size: 11px;
+    text-decoration: underline;
+  }

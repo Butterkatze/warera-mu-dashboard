@@ -1,4 +1,4 @@
-import { getWarEraClient } from './api.js';
+import { getWarEraClient } from './apiwrapper.js';
 
 export class DataHandler {
 
