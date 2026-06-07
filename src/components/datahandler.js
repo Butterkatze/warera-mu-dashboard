@@ -513,10 +513,12 @@ export class DataHandler {
           if (index > 0) html += "\n";
           
           html += `## ${spalte.category}\n\n`;
+
+          
           
           spalte.ids.forEach(id => {
-              // Generiert exakt die gewünschte Struktur mit Backslash davor und danach
-              html += `\\\n<span data-content-link="" data-content-type="mu" data-content-data="{&quot;muId&quot;:&quot;${id}&quot;,&quot;fullMatch&quot;:&quot;https://app.warera.io/mu/${id}&quot;}" data-original-text="https://app.warera.io/mu/${id}"></span> \\\n`;
+              html += "\\\n";
+              html += `<span data-content-link="" data-content-type="mu" data-content-data="{&quot;muId&quot;:&quot;${id}&quot;,&quot;fullMatch&quot;:&quot;https://app.warera.io/mu/${id}&quot;}" data-original-text="https://app.warera.io/mu/${id}"></span>`;
           });
       });
       return html;
