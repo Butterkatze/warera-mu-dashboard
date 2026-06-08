@@ -194,49 +194,43 @@ function MuUserList({ members = [], muUsers = [], isLoadingUsers = false }) {
                     <td className="user-name-cell">
                       <div className="mu-table-flex-container">
                         
-                        {/* 1. USER AVATAR */}
+                        {/* AVATAR WRAPPER (Hier muss alles rein!) */}
                         <div className="mu-table-avatar-wrapper">
                           {hasAvatar ? (
                             <img src={user.avatarUrl} alt={userName} className="mu-table-avatar" />
                           ) : (
                             <div className="mu-table-avatar-placeholder">?</div>
                           )}
-                        </div>
 
-                        {/* 2. LANDESFLAGGE */}
-                        
-                        {isObject && user.country && (
-                          (() => {
-                            const countryData = user.country;
-
-                            if (typeof countryData === 'string' && countryData.length <= 3) {
-                              const cleanCode = countryData.trim().toLowerCase();
-                              
-                              try {
-                                // VITE-MAGIC: Das sagt Vite, dass das Bild im Komponenten-Ordner liegt!
-                                const flagUrl = new URL(`./flags/${cleanCode}.svg`, import.meta.url).href;
-
-                                return (
-                                  <img 
-                                    src={flagUrl} 
-                                    alt={`Flagge ${cleanCode}`} 
-                                    className="mu-table-flag"
-                                    onError={(e) => { 
-                                      // Verhindert unendliche Schleifen, falls eine Flagge mal ganz fehlt
-                                      e.target.onerror = null; 
-                                      e.target.style.display = 'none'; 
-                                    }}
-                                  />
-                                );
-                              } catch (err) {
-                                console.error("Fehler beim Laden des SVG-Pfads", err);
-                                return null;
+                          {/* LANDESFLAGGE: Jetzt INSIDE dem relativen Wrapper */}
+                          {isObject && user.country && (
+                            (() => {
+                              const countryData = user.country;
+                              if (typeof countryData === 'string' && countryData.length <= 3) {
+                                const cleanCode = countryData.trim().toLowerCase();
+                                try {
+                                  const flagUrl = new URL(`/public/flags/${cleanCode}.svg`, import.meta.url).href;
+                                  return (
+                                    <img 
+                                      src={flagUrl} 
+                                      alt={`Flagge ${cleanCode}`} 
+                                      className="mu-table-flag-overlay"
+                                      onError={(e) => { 
+                                        e.target.onerror = null; 
+                                        e.target.style.display = 'none'; 
+                                      }}
+                                    />
+                                  );
+                                } catch (err) {
+                                  console.error("Fehler beim Laden des SVG-Pfads", err);
+                                  return null;
+                                }
                               }
-                            }
+                              return null;
+                            })()
+                          )}
+                        </div> {/* Ende des Wrappers */}
 
-                            return null;
-                          })()
-                        )}
                         {/* 3. USERNAME TEXT */}
                         <span className="mu-table-username-text">{userName}</span>
                       </div>

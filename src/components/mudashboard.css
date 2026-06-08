@@ -106,32 +106,6 @@
     text-transform: uppercase;
   }
   
-  .mu-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-  
-  .mu-list-item {
-    font-size: 0.8rem;
-    padding: 4px 8px;
-    border-radius: 4px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
-  
-  .manager-item {
-    background-color: rgba(138, 43, 226, 0.15);
-    border-color: rgba(138, 43, 226, 0.3);
-  }
-  
-  .commander-item {
-    background-color: rgba(30, 144, 255, 0.15);
-    border-color: rgba(30, 144, 255, 0.3);
-  }
-  
   .mu-no-data, .mu-no-selection {
     color: var(--color-text-muted);
     font-size: 0.85rem;
@@ -182,10 +156,9 @@
     background-color: rgba(255, 255, 255, 0.02);
   }
   
-
   .user-name-cell {
-  font-family: monospace;
-}
+    font-family: monospace;
+  }
   
   /* Status Indikatoren */
   .status-dot {
@@ -217,13 +190,12 @@
     50% { opacity: 1; }
     100% { opacity: 0.6; }
   }
-
-
+  
   /* ==========================================================================
-   Erweiterung für die Führungs-Karten (Avatare im Management)
-   ========================================================================== */
-
-.mu-management-cards-container {
+     Erweiterung für die Führungs-Karten (Avatare im Management)
+     ========================================================================== */
+  
+  .mu-management-cards-container {
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -281,23 +253,17 @@
     font-weight: 500;
     color: var(--color-text-primary, #ffffff);
   }
-
-
+  
   /* ==========================================================================
-   Erweiterung für Avatare in der Mitglieder-Tabelle
-   ========================================================================== */
+     Erweiterung für Avatare in der Mitglieder-Tabelle
+     ========================================================================== */
   
   /* Container für die Zelle, damit die Tabellenstruktur intakt bleibt */
-  /* 
-  td.user-name-cell {
-   height: 100%;
-  }
-  */
-
-  /* Größe des runden Avatars in der Tabelle */
   .mu-table-avatar-wrapper {
-    width: 28px;
-    height: 28px;
+    position: relative;
+    width: 40px;  
+    height: 40px;
+    display: inline-block;
     flex-shrink: 0;
   }
   
@@ -307,6 +273,7 @@
     border-radius: 50%;
     object-fit: cover;
     border: 1px solid rgba(255, 255, 255, 0.1);
+    display: block;
   }
   
   /* Platzhalter-Icon, falls ein Member kein Profilbild hat */
@@ -316,7 +283,7 @@
     border-radius: 50%;
     background-color: rgba(255, 255, 255, 0.08);
     color: #aaa;
-    display: flex;
+    display: flex; /* Optimiert: Flexbox für perfekte Zentrierung des "?" hinzugefügt */
     align-items: center;
     justify-content: center;
     font-size: 12px;
@@ -328,7 +295,7 @@
     font-size: 14px;
     color: var(--color-text-primary, #ffffff);
   }
-
+  
   .sortable-header {
     cursor: pointer;
     user-select: none; /* Verhindert unschönes Markieren des Textes bei schnellen Klicks */
@@ -337,21 +304,24 @@
   .sortable-header:hover {
     background-color: rgba(255, 255, 255, 0.05); /* Dezenter Hover-Effekt */
   }
-
+  
   /* Container, der Avatar, Flagge und Text in der Zelle nebeneinander anordnet */
-.mu-table-flex-container {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-/* Styling für die neue Landesflagge */
-.mu-table-flag {
-  display: block;
-  width: 21px;                 /* Perfekte Breite für das 3:2 Verhältnis */
-  height: 14px;                /* Exakte Höhe (21 / 1.5 = 14) -> keine Verzerrung! */
-  border-radius: 2px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
-  object-fit: contain;         /* Sorgt dafür, dass das gesamte SVG sauber eingepasst wird */
-  flex-shrink: 0;              /* Verhindert das Quetschen bei langen Usernamen */
-}
+  .mu-table-flex-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  
+  /* Die Landesflagge schwebt absolut über der unteren linken Ecke des Avatars */
+  .mu-table-flag-overlay {
+    position: absolute;
+    bottom: -2px;              /* Leicht optimiert für eine perfektere Kantenführung */
+    left: -2px;                /* Leicht optimiert für eine perfektere Kantenführung */
+    width: 18px;               /* Ideale Breite für eine kleine Flagge */
+    height: 12px;              /* Ideale Höhe für eine kleine Flagge */
+    object-fit: cover;
+    border-radius: 2px;        /* Leicht abgerundete Ecken */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6), 
+                0 0 0 1px rgba(255, 255, 255, 0.15); /* Schatten + zarte Kontur für Kontrast */
+    z-index: 5;                /* Bleibt immer über dem Avatar sichtbar */
+  }
