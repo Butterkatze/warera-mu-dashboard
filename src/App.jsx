@@ -100,10 +100,10 @@ function App() {
 
   // Hilfsfunktion für den manuellen "Zurück"-Button im Dashboard
   const handleBackToGrid = () => {
+    setSelectedMu(null);
+
     if (window.history.state?.view === 'dashboard') {
       window.history.back(); // Löst das popstate-Event aus
-    } else {
-      setSelectedMu(null);
     }
   };
 

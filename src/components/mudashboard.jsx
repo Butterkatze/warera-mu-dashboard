@@ -209,7 +209,7 @@ function MuUserList({ members = [], muUsers = [], isLoadingUsers = false }) {
                               if (typeof countryData === 'string' && countryData.length <= 3) {
                                 const cleanCode = countryData.trim().toLowerCase();
                                 try {
-                                  const flagUrl = new URL(`/public/flags/${cleanCode}.svg`, import.meta.url).href;
+                                  const flagUrl = new URL(`/flags/${cleanCode}.svg`, import.meta.url).href;
                                   return (
                                     <img 
                                       src={flagUrl} 
