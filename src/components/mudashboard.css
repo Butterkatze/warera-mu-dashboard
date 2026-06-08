@@ -175,21 +175,17 @@
     padding: 8px 10px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.03);
     color: var(--color-text-primary);
+    vertical-align: middle; /* Sorgt dafür, dass alle Zelleninhalte mittig sitzen */
   }
   
   .mu-user-table tr:hover {
     background-color: rgba(255, 255, 255, 0.02);
   }
   
-  .user-name-cell {
-    font-family: monospace;
-    display: flex !important;
-    align-items: center;
-    gap: 10px;
-    /* Sorgt dafür, dass die vertikale Tabellenausrichtung bündig bleibt */
-    border-bottom: none !important; 
 
-  }
+  .user-name-cell {
+  font-family: monospace;
+}
   
   /* Status Indikatoren */
   .status-dot {
@@ -292,10 +288,12 @@
    ========================================================================== */
   
   /* Container für die Zelle, damit die Tabellenstruktur intakt bleibt */
+  /* 
   td.user-name-cell {
-    height: 100%;
+   height: 100%;
   }
-  
+  */
+
   /* Größe des runden Avatars in der Tabelle */
   .mu-table-avatar-wrapper {
     width: 28px;
@@ -339,3 +337,21 @@
   .sortable-header:hover {
     background-color: rgba(255, 255, 255, 0.05); /* Dezenter Hover-Effekt */
   }
+
+  /* Container, der Avatar, Flagge und Text in der Zelle nebeneinander anordnet */
+.mu-table-flex-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Styling für die neue Landesflagge */
+.mu-table-flag {
+  display: block;
+  width: 21px;                 /* Perfekte Breite für das 3:2 Verhältnis */
+  height: 14px;                /* Exakte Höhe (21 / 1.5 = 14) -> keine Verzerrung! */
+  border-radius: 2px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  object-fit: contain;         /* Sorgt dafür, dass das gesamte SVG sauber eingepasst wird */
+  flex-shrink: 0;              /* Verhindert das Quetschen bei langen Usernamen */
+}

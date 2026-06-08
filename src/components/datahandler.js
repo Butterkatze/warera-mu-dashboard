@@ -12,7 +12,8 @@ export class DataHandler {
 
         this.ARTICLE_CACHE = 5 * 60 * 1000; 
         this.MU_CACHE= 15 * 60 * 1000;
-        this.USER_CACHE = 60 * 60 * 1000;     
+        this.USER_CACHE = 15 * 60 * 1000;
+        this.COUNTRY_CACHE = 24 * 60 * 60 * 1000;     
     }
 
     // Methode, um die ID jederzeit von außen live zu ändern
@@ -76,6 +77,84 @@ export class DataHandler {
       return articleData
 
     }
+
+   /* ==========================================================================
+    Country Funktionen
+    ========================================================================== */
+
+    async #setCountryCache(countryCacheKey) {
+      const now = Date.now();
+      const response = await this.client.country.getAllCountries(); 
+      const countryData = response?.result?.data || response;
+
+      if (!Array.isArray(countryData)) {
+          console.warn("Country-API lieferte kein gültiges Array.");
+          return [];
+      }
+
+      const formatedCountries = countryData.map(country => {
+          let cleanCode = country.code ? country.code.toLowerCase() : "";
+
+          // Mapping-Tabelle für die fehlerhaften/fehlenden SVG-Kürzel
+          if (cleanCode === 'sj') cleanCode = 'no'; // Svalbard -> Norwegen
+          if (cleanCode === 'um') cleanCode = 'us'; // US Minor Islands -> USA
+          if (cleanCode === 'bv') cleanCode = 'no'; // Bouvetinsel -> Norwegen
+          if (cleanCode === 'hm') cleanCode = 'au'; // Heard und McDonald -> Australien
+
+          return {
+              _id: country._id,
+              code: cleanCode
+          };
+      });
+
+      /* Cache anlegen (Gesamtes Array als eine JSON-Zeile) */
+      localStorage.setItem(countryCacheKey, JSON.stringify({ data: formatedCountries, timestamp: now }));
+      return formatedCountries;
+  }
+
+  async #getCountries(countryId = null) {
+      const now = Date.now();
+      const countryCacheKey = `countries_cache_all`;
+      const cached = localStorage.getItem(countryCacheKey);
+      let allCountries = [];
+
+
+      if (cached && !this.forceUpdate) {
+          try {
+              const { data, timestamp } = JSON.parse(cached);
+              if (now - timestamp < this.COUNTRY_CACHE) {
+                  allCountries = data; 
+              }
+          } catch (e) {
+              console.error("Country Cache Parse Fehler:", e);
+          }
+      }
+
+      if (allCountries.length === 0) {
+        if (!this.laufendeCountryRequest) {
+            this.laufendeCountryRequest = this.#setCountryCache(countryCacheKey).then(data => {
+                this.laufendeCountryRequest = null; // Zurücksetzen wenn fertig
+                return data;
+            });
+        }
+        allCountries = await this.laufendeCountryRequest;
+    }
+
+      if (countryId) {
+          return allCountries.find(c => c._id === countryId) || null;
+      }
+
+      // Wenn kein Parameter übergeben wurde, gib das komplette Array zurück
+      return allCountries;
+  }
+
+  async getCountriesWrapper(countryId = null) {
+      const result = await this.#getCountries(countryId);
+      this.setForceUpdate(); // Setzt forceUpdate wie beim Artikel-Wrapper zurück
+      return result;
+  } 
+  
+
 /* ==========================================================================
     MU Funktionen
     ========================================================================== */
@@ -284,7 +363,7 @@ export class DataHandler {
 
 
 /* ==========================================================================
-    MU Funktionen
+    User Funktionen
     ========================================================================== */
 
 
@@ -294,13 +373,16 @@ export class DataHandler {
       const response = await this.client.user.getUserLite({ userId : USER_ID });
       const userData = response?.result?.data || response;
 
+      // Nutzt den neuen, flexiblen Getter mit Parameter, um nur EIN Land zu erhalten
+      const countryObj = await this.#getCountries(userData.country);
+      const flagCode = countryObj ? countryObj.code : "";
 
       const formatedUser = {
 
           _id: userData._id,
           avatarUrl: userData.avatarUrl,
           username: userData.username,
-          country: userData.country,
+          country: flagCode,
           level: userData.leveling?.level,
           isActive: userData.isActive,
           weeklyUserDamages: userData.rankings?.weeklyUserDamages?.value,
@@ -404,18 +486,27 @@ export class DataHandler {
 
     const muObjekt = muResult[0].objekt;
 
+    const extrahiereId = (item) => {
+      if (!item) return null;
+      if (typeof item === 'object') {
+        return (item._id || item.id)?.toString();
+      }
+      return item.toString();
+    };
+
     // 1. IDs extrahieren und strikt zu Strings konvertieren
     const rawManagers = muObjekt.managers || [];
-    const managerIds = (Array.isArray(rawManagers) ? rawManagers : [rawManagers]).map(id => id?.toString()).filter(Boolean);
-    const commanderIds = (muObjekt.commanders || []).map(id => id?.toString()).filter(Boolean);
-    const memberIds = (muObjekt.members || []).map(id => id?.toString()).filter(Boolean);
+    const managerIds = (Array.isArray(rawManagers) ? rawManagers : [rawManagers]).map(extrahiereId).filter(Boolean);
+    const commanderIds = (muObjekt.commanders || []).map(extrahiereId).filter(Boolean);
+    const memberIds = (muObjekt.members || []).map(extrahiereId).filter(Boolean);
+
+    await this.#getCountries();
 
     // 2. Alle eindeutigen IDs laden
     const alleUserIds = new Set([...managerIds, ...commanderIds, ...memberIds]);
     const geladeneUser = await this.#getUser(Array.from(alleUserIds));
 
-    // 3. Wir bauen uns eine Map aus den geladenen Usern
-    // Wichtig: Wir filtern hier alles heraus, was kein echtes Objekt mit username ist!
+   // 3. Map bauen
     const userMap = new Map();
     geladeneUser.forEach(user => {
       if (user && typeof user === 'object' && user._id) {
@@ -423,9 +514,7 @@ export class DataHandler {
       }
     });
 
-    // 4. Helfer-Funktion: Holt das Objekt aus der Map. 
-    // Falls die API für die ID versagt hat, BAUT sie ein gültiges Objekt zusammen,
-    // damit das Dashboard NIEMALS wieder nur eine nackte ID sieht!
+   // 4. Helfer-Funktion
     const zwingeUserObjekt = (id, fallbackRolle) => {
       const existierenderUser = userMap.get(id);
       if (existierenderUser && existierenderUser.username) {

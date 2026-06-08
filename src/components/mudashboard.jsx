@@ -106,7 +106,7 @@ function MuUserList({ members = [], muUsers = [], isLoadingUsers = false }) {
   // 1. States für Sortier-Spalte und Richtung definieren
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'desc' });
 
-  const displayList = muUsers.length > 0 ? muUsers : members;
+  const displayList = muUsers && muUsers.length > 0 ? muUsers : members;
 
   // 2. Sortier-Handler: Wechselt Richtung oder Spalte bei Klick
   const requestSort = (key) => {
@@ -192,14 +192,54 @@ function MuUserList({ members = [], muUsers = [], isLoadingUsers = false }) {
                 return (
                   <tr key={user._id || idx}>
                     <td className="user-name-cell">
-                      <div className="mu-table-avatar-wrapper">
-                        {hasAvatar ? (
-                          <img src={user.avatarUrl} alt={userName} className="mu-table-avatar" />
-                        ) : (
-                          <div className="mu-table-avatar-placeholder">?</div>
+                      <div className="mu-table-flex-container">
+                        
+                        {/* 1. USER AVATAR */}
+                        <div className="mu-table-avatar-wrapper">
+                          {hasAvatar ? (
+                            <img src={user.avatarUrl} alt={userName} className="mu-table-avatar" />
+                          ) : (
+                            <div className="mu-table-avatar-placeholder">?</div>
+                          )}
+                        </div>
+
+                        {/* 2. LANDESFLAGGE */}
+                        
+                        {isObject && user.country && (
+                          (() => {
+                            const countryData = user.country;
+
+                            if (typeof countryData === 'string' && countryData.length <= 3) {
+                              const cleanCode = countryData.trim().toLowerCase();
+                              
+                              try {
+                                // VITE-MAGIC: Das sagt Vite, dass das Bild im Komponenten-Ordner liegt!
+                                const flagUrl = new URL(`./flags/${cleanCode}.svg`, import.meta.url).href;
+
+                                return (
+                                  <img 
+                                    src={flagUrl} 
+                                    alt={`Flagge ${cleanCode}`} 
+                                    className="mu-table-flag"
+                                    onError={(e) => { 
+                                      // Verhindert unendliche Schleifen, falls eine Flagge mal ganz fehlt
+                                      e.target.onerror = null; 
+                                      e.target.style.display = 'none'; 
+                                    }}
+                                  />
+                                );
+                              } catch (err) {
+                                console.error("Fehler beim Laden des SVG-Pfads", err);
+                                return null;
+                              }
+                            }
+
+                            return null;
+                          })()
                         )}
+                        {/* 3. USERNAME TEXT */}
+                        <span className="mu-table-username-text">{userName}</span>
                       </div>
-                      <span className="mu-table-username-text">{userName}</span>
                     </td>
                     <td>{weeklyDamage}</td>
                     <td>{userRank}</td>
