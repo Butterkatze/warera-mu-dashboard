@@ -11,11 +11,11 @@ function MuGeneralStats({ rankings = {}, activeUpgradeLevels = {} }) {
       <div className="mu-stats-grid">
         <div className="mu-stat-entry">
           <span className="mu-label">Kontostand:</span>
-          <span className="mu-value text-gold">{rankings.muWealth?.toLocaleString() || '0'} BTC</span>
+          <span className="mu-value text-gold">{rankings.muWealth?.toLocaleString('de-DE') || '0'} BTC</span>
         </div>
         <div className="mu-stat-entry">
           <span className="mu-label">Wöchentlicher Schaden:</span>
-          <span className="mu-value">{rankings.muWeeklyDamages?.toLocaleString() || '0'}</span>
+          <span className="mu-value">{rankings.muWeeklyDamages?.toLocaleString('de-DE') || '0'}</span>
         </div>
         <div className="mu-stat-entry">
           <span className="mu-label">HQ:</span>
@@ -185,7 +185,7 @@ function MuUserList({ members = [], muUsers = [], isLoadingUsers = false }) {
                 const isObject = typeof user === 'object';
                 const userName = isObject ? user.username : `User-ID: ${user}`;
                 const userRank = isObject && user.level ? `Level ${user.level}` : 'Mitglied';
-                const weeklyDamage = isObject && user.weeklyUserDamages ? user.weeklyUserDamages.toLocaleString() : '0';
+                const weeklyDamage = isObject && user.weeklyUserDamages ? user.weeklyUserDamages.toLocaleString('de-DE') : '0';
                 const isActive = isObject ? (user.isActive ? 'aktiv' : 'inaktiv') : 'keine Daten';
                 const hasAvatar = isObject && user.avatarUrl && user.avatarUrl !== "";
 
