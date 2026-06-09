@@ -2,16 +2,16 @@
    1. Basis & Layout-Container
    ========================================================================== */
    .editor-container {
-    background-color: #1a1f2c;
-    border: 1px solid #2d3748;
+    background-color: #1a1f2c; /* Beibehalten für den dunkleren Editor-Kontrast */
+    border: 1px solid var(--color-border);
     border-radius: 8px;
     padding: 20px;
     margin-top: 25px;
-    color: #fff;
+    color: var(--color-text-primary);
   }
   
   .editor-header {
-    border-bottom: 1px solid #2d3748;
+    border-bottom: 1px solid var(--color-border);
     padding-bottom: 15px;
     margin-bottom: 15px;
   }
@@ -31,9 +31,9 @@
      ========================================================================== */
   .editor-accordion {
     margin-bottom: 20px;
-    border: 1px solid #2d3748;
+    border: 1px solid var(--color-border);
     border-radius: 6px;
-    background-color: #11141d;
+    background-color: var(--color-input-bg);
     overflow: hidden;
   }
   
@@ -41,7 +41,7 @@
     width: 100%;
     background: #161b26;
     border: none;
-    color: #00ffcc;
+    color: var(--color-primary);
     padding: 12px 15px;
     text-align: left;
     font-size: 14px;
@@ -59,22 +59,74 @@
     grid-template-columns: 1fr 1fr;
     gap: 20px;
     padding: 15px;
-    background-color: #11141d;
-    border-top: 1px solid #2d3748;
+    background-color: var(--color-input-bg);
+    border-top: 1px solid var(--color-border);
   }
   
   .io-box textarea {
     width: 100%;
     height: 110px;
     background-color: #161b26;
-    border: 1px solid #2d3748;
+    border: 1px solid var(--color-border);
     border-radius: 4px;
-    color: #00ffcc;
+    color: var(--color-primary);
     font-family: monospace;
     padding: 10px;
     margin: 10px 0;
     resize: none;
     box-sizing: border-box;
+  }
+  
+  /* Mathematisch exakt gleiche Höhe und Struktur für beide oberen Buttons */
+  
+  /* Linker Button (Importieren) */
+  .editor-io-section .io-box .btn-primary,
+  .editor-io-section .io-box button.btn-primary {
+    background-color: var(--color-primary) !important;
+    color: #ffffff !important;
+    border: 1px solid transparent !important;
+    padding: 0 16px !important;
+    height: 40px !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    border-radius: 6px !important;
+    width: auto !important;
+    box-sizing: border-box !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: background-color 0.15s ease !important;
+  }
+  
+  .editor-io-section .io-box .btn-primary:hover {
+    background-color: var(--color-primary-hover) !important;
+  }
+  
+  /* Rechter Button (Code generieren & kopieren) */
+  .editor-io-section .io-box .btn-secondary,
+  .editor-io-section .io-box button.btn-secondary {
+    background-color: transparent !important;
+    color: var(--color-text-secondary) !important;
+    border: 1px solid var(--color-border) !important;
+    padding: 0 16px !important;
+    height: 40px !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    border-radius: 6px !important;
+    width: auto !important;
+    box-sizing: border-box !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 0.2s ease !important;
+  }
+  
+  .editor-io-section .io-box .btn-secondary:hover {
+    color: var(--color-text-primary) !important;
+    border-color: var(--color-text-secondary) !important;
+    background-color: rgba(255, 255, 255, 0.02) !important;
   }
   
   /* ==========================================================================
@@ -93,8 +145,8 @@
     width: 240px !important;
     max-width: 240px !important;
     min-width: 240px !important;
-    background-color: #11141d !important;
-    border: 1px solid #2d3748 !important;
+    background-color: var(--color-input-bg) !important;
+    border: 1px solid var(--color-border) !important;
     border-radius: 6px !important;
     flex: none !important;
     display: flex !important;
@@ -105,7 +157,7 @@
   
   .editor-column:active {
     cursor: grabbing !important;
-    border-color: #00ffcc !important;
+    border-color: var(--color-primary) !important;
   }
   
   .column-header {
@@ -113,8 +165,8 @@
     justify-content: space-between !important;
     align-items: center !important;
     padding: 12px 15px !important;
-    border-bottom: 1px solid #2d3748 !important;
-    background-color: #161b26 !important;
+    border-bottom: 1px solid var(--color-border) !important;
+    background-color: #161b26;
     border-top-left-radius: 5px !important;
     border-top-right-radius: 5px !important;
   }
@@ -124,7 +176,7 @@
     margin: 0;
     font-size: 14px;
     font-weight: 600;
-    color: #fff;
+    color: var(--color-text-primary);
     display: flex;
     align-items: center;
     gap: 5px;
@@ -136,19 +188,19 @@
   }
   
   .clickable-column-title:hover {
-    color: #00ffcc;
+    color: var(--color-primary);
     text-decoration: underline;
   }
   
   .column-count {
-    color: #718096;
+    color: var(--color-text-muted);
     font-size: 12px;
   }
   
   .column-name-edit-input {
-    background-color: #11141d !important;
-    border: 1px solid #00ffcc !important;
-    color: #fff !important;
+    background-color: var(--color-input-bg) !important;
+    border: 1px solid var(--color-primary) !important;
+    color: var(--color-text-primary) !important;
     font-size: 14px !important;
     font-weight: 600 !important;
     padding: 4px 8px !important;
@@ -168,9 +220,9 @@
   
   .placeholder-text {
     text-align: center;
-    color: #4a5568;
+    color: var(--color-text-muted);
     margin-top: 20px;
-    border: 2px dashed #2d3748;
+    border: 2px dashed var(--color-border);
     padding: 15px;
     border-radius: 6px;
     font-size: 13px;
@@ -184,7 +236,7 @@
     justify-content: space-between !important;
     align-items: center !important;
     background-color: #161b26 !important;
-    border: 1px solid #2d3748 !important;
+    border: 1px solid var(--color-border) !important;
     padding: 6px 10px !important;
     width: 100% !important;
     box-sizing: border-box !important;
@@ -213,8 +265,8 @@
   }
   
   .mu-mini-placeholder {
-    background-color: #4a5568;
-    color: #fff;
+    background-color: var(--color-secondary);
+    color: var(--color-text-primary);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -227,7 +279,7 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    color: #fff;
+    color: var(--color-text-primary);
   }
   
   /* ==========================================================================
@@ -238,8 +290,8 @@
     align-items: center !important;
     justify-content: center !important;
     background-color: transparent !important;
-    border: 1px dashed #2d3748 !important;
-    color: #718096 !important;
+    border: 1px dashed var(--color-border) !important;
+    color: var(--color-text-muted) !important;
     padding: 8px 10px !important;
     width: 100% !important;
     box-sizing: border-box !important;
@@ -251,9 +303,9 @@
   }
   
   .btn-inline-add-mu-card:hover {
-    border-color: #00ffcc !important;
-    color: #00ffcc !important;
-    background-color: rgba(0, 255, 204, 0.02) !important;
+    border-color: var(--color-primary) !important;
+    color: var(--color-primary) !important;
+    background-color: rgba(16, 185, 129, 0.02) !important;
   }
   
   .inline-mu-id-form {
@@ -266,8 +318,8 @@
     width: 100% !important;
     box-sizing: border-box !important;
     background-color: #161b26 !important;
-    border: 1px solid #00ffcc !important;
-    color: #fff !important;
+    border: 1px solid var(--color-primary) !important;
+    color: var(--color-text-primary) !important;
     padding: 7px 10px !important;
     font-size: 12px !important;
     border-radius: 4px !important;
@@ -282,21 +334,21 @@
     align-items: center !important;
     justify-content: center !important;
     background-color: #161b26 !important;
-    border: 2px dashed #2d3748 !important;
+    border: 2px dashed var(--color-border) !important;
     border-radius: 6px !important;
     align-self: flex-start !important;
     transition: all 0.2s ease !important;
   }
   
   .editor-column-add-card:hover {
-    border-color: #00ffcc !important;
-    background-color: rgba(0, 255, 204, 0.02) !important;
+    border-color: var(--color-primary) !important;
+    background-color: rgba(16, 185, 129, 0.02) !important;
   }
   
   .btn-add-column-plus {
     background: none !important;
     border: none !important;
-    color: #a0aec0 !important;
+    color: var(--color-text-secondary) !important;
     font-size: 28px !important;
     cursor: pointer !important;
     width: 100% !important;
@@ -308,7 +360,7 @@
   }
   
   .btn-add-column-plus:hover {
-    color: #00ffcc !important;
+    color: var(--color-primary) !important;
   }
   
   /* ==========================================================================
@@ -324,7 +376,7 @@
     background: transparent !important;
     font-size: 22px !important;
     font-weight: normal !important;
-    color: #ef4444 !important;
+    color: var(--color-error) !important;
     line-height: 1 !important;
     display: flex !important;
     align-items: center !important;
@@ -347,7 +399,7 @@
     background: transparent !important;
     font-size: 14px !important;
     font-weight: bold !important;
-    color: #ef4444 !important;
+    color: var(--color-error) !important;
     line-height: 1 !important;
     display: flex !important;
     align-items: center !important;
@@ -360,7 +412,7 @@
   
   .btn-remove-item:hover {
     color: #f87171 !important;
-    background-color: rgba(239, 68, 68, 0.15) !important;
+    background-color: var(--color-error-bg) !important;
   }
   
   /* ==========================================================================
@@ -373,34 +425,36 @@
     gap: 12px !important;
     margin-top: 30px !important;
     padding-top: 20px !important;
-    border-top: 1px solid #2d3748 !important;
+    border-top: 1px solid var(--color-border) !important;
   }
   
+  /* Primärer Action Button */
   .btn-editor-primary.small,
   button.btn-editor-primary.small {
     flex: none !important;
     width: auto !important;
-    background-color: #00ffcc !important;
-    color: #11141d !important;
-    padding: 8px 16px !important;
+    background-color: var(--color-primary) !important;
+    color: #ffffff !important;
+    padding: 10px 16px !important;
     font-size: 13px !important;
-    font-weight: bold !important;
-    border-radius: 4px !important;
+    font-weight: 600 !important;
+    border-radius: 6px !important;
     border: none !important;
     cursor: pointer !important;
   }
   
   .btn-editor-primary.small:hover {
-    opacity: 0.9;
+    background-color: var(--color-primary-hover) !important;
   }
   
+  /* Sekundärer Action Button */
   .btn-editor-secondary.small,
   button.btn-editor-secondary.small {
     flex: none !important;
     width: auto !important;
     background-color: transparent !important;
-    color: #a0aec0 !important;
-    border: 1px solid #4a5568 !important;
+    color: var(--color-text-secondary) !important;
+    border: 1px solid var(--color-border) !important;
     padding: 8px 16px !important;
     font-size: 13px !important;
     font-weight: bold !important;
@@ -410,13 +464,60 @@
   }
   
   .btn-editor-secondary.small:hover {
-    color: #fff;
-    border-color: #718096;
+    color: var(--color-text-primary);
+    border-color: var(--color-text-secondary);
     background-color: rgba(255, 255, 255, 0.02);
   }
   
+  /* Erfolgs-Button (Layout anwenden) */
+  .btn-editor-success {
+    background-color: var(--color-primary);
+    color: #ffffff;
+    border: none;
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+  }
+  
+  .btn-editor-success:hover {
+    background-color: var(--color-primary-hover);
+  }
+  
+  /* Gefahren-Button (Layout löschen) */
+  .btn-editor-danger {
+    background-color: var(--color-error-bg);
+    border: 1px solid var(--color-error-border);
+    color: var(--color-error);
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  
+  .btn-editor-danger:hover {
+    background-color: rgba(239, 68, 68, 0.25);
+    border-color: var(--color-error);
+    color: #ffffff;
+  }
+  
+  /* Kapselung für die kleineren Footer-Modifikationen */
+  .editor-footer-actions > .small,
+  .editor-footer-actions > button.small {
+    padding: 10px 16px !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    border-radius: 6px !important;
+    height: auto !important;
+    box-sizing: border-box !important;
+  }
+  
   .copy-status-message {
-    color: #2ecc71;
+    color: var(--color-success);
     font-weight: bold;
     font-size: 14px;
     animation: fadeIn 0.3s ease-in-out;
@@ -435,45 +536,3 @@
       transform: translateY(0);
     }
   }
-
-
-
-  /* Styling für die neuen Layout-Steuerungs-Buttons */
-.btn-editor-success {
-  background-color: #10b981;
-  color: #ffffff;
-  border: none;
-  padding: 10px 16px;
-  font-size: 13px;
-  font-weight: 600;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.15s ease;
-}
-
-.btn-editor-success:hover {
-  background-color: #059669;
-}
-
-.btn-editor-danger {
-  background-color: rgba(239, 68, 68, 0.15);
-  border: 1px solid rgba(239, 68, 68, 0.4);
-  color: #f87171;
-  padding: 10px 16px;
-  font-size: 13px;
-  font-weight: 600;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.btn-editor-danger:hover {
-  background-color: rgba(239, 68, 68, 0.25);
-  border-color: #ef4444;
-  color: #ffffff;
-}
-
-.editor-footer-actions .small {
-  padding: 10px 16px;
-  font-size: 13px;
-}

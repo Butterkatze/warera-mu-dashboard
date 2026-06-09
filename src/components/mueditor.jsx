@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import './mueditor.css';
 
-export default function MuEditor({ muData = [], onCancel, dataHandler, onRefresh }) {
-  
+//export default function MuEditor({ muData = [], onCancel, dataHandler, onRefresh }) {
+export default function MuEditor({ muData = [], dataHandler, onRefresh }) { 
   const [spalten, setSpalten] = useState(() => {
     if (muData && muData.length > 0) {
       const map = new Map();
@@ -125,7 +125,7 @@ export default function MuEditor({ muData = [], onCancel, dataHandler, onRefresh
 
   const exportieren = async () => {
     if (dataHandler) {
-      const htmlOutput = dataHandler.exportSpaltenToHtml(spalten);
+      const htmlOutput = dataHandler.exportSpaltenToMarkdown(spalten);
       setExportText(htmlOutput);
 
       try {
@@ -146,7 +146,7 @@ export default function MuEditor({ muData = [], onCancel, dataHandler, onRefresh
   const importieren = async () => {
     if (!importText || !dataHandler) return;
     
-    const geparsteGruppen = dataHandler.parseRawHtmlContent(importText);
+    const geparsteGruppen = dataHandler.parseMarkdownToSpalten(importText);
 
     if (geparsteGruppen.length > 0) {
       setSpalten(geparsteGruppen);
@@ -206,7 +206,7 @@ export default function MuEditor({ muData = [], onCancel, dataHandler, onRefresh
             <div className="io-box">
               <h4>Manuelle Artikel-Daten importieren</h4>
               <textarea 
-                placeholder="Füge hier das HTML aus deinem bestehenden Artikel ein..." 
+                placeholder="Füge hier den Text eines Artikels ein..." 
                 value={importText}
                 onChange={(e) => setImportText(e.target.value)}
               />
@@ -342,9 +342,11 @@ export default function MuEditor({ muData = [], onCancel, dataHandler, onRefresh
           </span>
         )}
 
+        {/*
         <button type="button" className="btn-editor-secondary small" onClick={onCancel}>
           Editor Schließen
         </button>
+        */}
 
         <button type="button" className="btn-editor-danger small" onClick={handleResetLayout}>
           Eigenes Layout löschen

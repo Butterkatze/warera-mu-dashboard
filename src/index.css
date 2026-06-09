@@ -31,6 +31,28 @@
     --color-border: #334155;
     --color-input-bg: #0f172a;
     --color-input-focus: #3b82f6;
+
+     /* Neue Variablen für das Grouped Grid & spezielle Container-Hintergründe */
+     --color-bg-grid-column: rgba(255, 255, 255, 0.02);
+     --color-bg-stat-box: rgba(0, 0, 0, 0.15);
+     --color-border-stat-box: rgba(255, 255, 255, 0.02);
+     --color-bg-clickable-hover: rgba(255, 255, 255, 0.02);
+
+     /* Neue Variablen für das Token-Modal (Tokenhandler) */
+    --color-accent-cyan: #00ffcc;
+    --color-accent-cyan-hover: rgba(0, 255, 204, 0.1);
+    --color-text-input-label: #718096;
+    --color-bg-reset-btn: #161b26;
+    --color-bg-reset-btn-hover: #1e2636;
+    --color-modal-backdrop: rgba(17, 20, 29, 0.85);
+
+    /* Ergänzung für Success-Status im Modal (Grün-Nuancen) */
+    --color-success-badge: #2ecc71;
+    --color-success-bg-modal: rgba(46, 204, 113, 0.1);
+    --color-success-border-modal: rgba(46, 204, 113, 0.2);
+
+    /* Userliste Mu dashborard*/
+    --color-table-divider: #3f4f66;
 }
 
 body {

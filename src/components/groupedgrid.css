@@ -4,141 +4,138 @@
 
 /* Das Layout für die Spalten-Gruppen */
 .grouped-grid-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(500px, max-content));
-    gap: 25px; /* Etwas mehr Abstand zwischen den Spalten */
-    padding-bottom: 30px;
-    align-self: center;
-  }
-  
-  /* Eine einzelne Spalte */
-  .grid-column {
-    min-width: max-content;
-    background-color: rgba(255, 255, 255, 0.02);
-    border-radius: 8px;
-    padding: 8px;
-    border: 1px solid var(--color-border);
-    align-self: start; 
- 
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(500px, max-content));
+  gap: 25px; 
+  padding-bottom: 30px;
+  align-self: center;
+}
 
-  }
-  
-  /* Titel der Spalte */
-  .column-title {
-    color: var(--color-primary);
-    font-size: 1.25rem;
-    text-align-last: center;
-    margin-top: 0;
-    margin-bottom: 15px;
-    border-bottom: 2px solid var(--color-border);
-    padding-bottom: 8px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    min-width:max-content;
-  }
-  
-  /* Container für die Items innerhalb einer Spalte */
-  .column-items {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    min-width: max-content;
-  }
-  
+/* Eine einzelne Spalte */
+.grid-column {
+  min-width: max-content;
+  background-color: var(--color-bg-grid-column);
+  border-radius: 8px;
+  padding: 8px;
+  border: 1px solid var(--color-border);
+  align-self: start; 
+} 
+
+/* Titel der Spalte */
+.column-title {
+  color: var(--color-primary);
+  font-size: 1.25rem;
+  text-align-last: center;
+  margin-top: 0;
+  margin-bottom: 15px;
+  border-bottom: 2px solid var(--color-border);
+  padding-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  min-width: max-content;
+}
+
+/* Container für die Items innerhalb einer Spalte */
+.column-items {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  min-width: max-content;
+}
+
 
 /* ==========================================================================
-  Items
+   Items
    ========================================================================== */
 
 /* Das einzelne Item wird zum Flex-Container */
 .grid-item {
-    background-color: var(--color-bg-surface);
-    border: 1px solid var(--color-border);
-    border-radius: 8px;
-    padding: 12px;
-    display: flex;
-    gap: 15px; /* Abstand zwischen Bild und Content-Bereich */
-    align-items: center; /* Zentriert Bild und Content vertikal zueinander */
-    transition: transform 0.2s ease, border-color 0.2s ease;
-    min-width: max-content;
-  }
-  
-  .grid-item:hover {
-    transform: translateY(-2px);
-    border-color: var(--color-primary-hover);
-  }
-  
-  /* Bild-Wrapper jetzt quadratisch oder im festen Format links */
-  .grid-item-image-wrapper {
-    width: 90px;
-    height: 90px;
-    flex-shrink: 0; /* Verhindert, dass das Bild gestaucht wird */
-    background-color: var(--color-input-bg);
-    border-radius: 6px;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  .grid-item-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-  
-  .grid-item-placeholder {
-    color: var(--color-text-muted);
-    font-size: 0.75rem;
-    text-align: center;
-    padding: 5px;
-  }
-  
-  /* Rechter Content-Bereich */
-  .grid-item-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-  }
-  
-  /* Name mittig (im Bezug auf den rechten Block) */
-  .grid-item-title {
-    color: var(--color-text-primary);
-    margin: 0 0 10px 0;
-    font-size: 1.1rem;
-    text-align: center; /* Name zentriert */
-  }
-  
-  /* Das 2x2 Grid für die Stats */
-  .grid-item-stats-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr); 
-    gap: 5px 12px; /* 6px Abstand vertikal, 12px horizontal */
-    font-size: 0.8rem;
-  }
-  
-  /* Einzelne Stat-Box im Grid */
-  .grid-item-stat-box {
-    display: flex;
-    justify-content: space-between;
-    background-color: rgba(0, 0, 0, 0.15); /* Subtiler Hintergrund für die Stats */
-    padding: 4px 6px;
-    border-radius: 4px;
-    border: 1px solid rgba(255, 255, 255, 0.02);
-    white-space: nowrap;
-  }
-  
-  .stat-label {
-    color: var(--color-text-secondary);
-    padding-right: 5px;
-  }
-  
-  .stat-value {
-    color: var(--color-success);
-    font-weight: bold;
-  }
-  
+  background-color: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  gap: 15px; 
+  align-items: center; 
+  transition: transform 0.2s ease, border-color 0.2s ease;
+  min-width: max-content;
+}
+
+.grid-item:hover {
+  transform: translateY(-2px);
+  border-color: var(--color-primary-hover);
+}
+
+/* Bild-Wrapper jetzt quadratisch oder im festen Format links */
+.grid-item-image-wrapper {
+  width: 90px;
+  height: 90px;
+  flex-shrink: 0; 
+  background-color: var(--color-input-bg);
+  border-radius: 6px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.grid-item-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.grid-item-placeholder {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  text-align: center;
+  padding: 5px;
+}
+
+/* Rechter Content-Bereich */
+.grid-item-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* Name mittig (im Bezug auf den rechten Block) */
+.grid-item-title {
+  color: var(--color-text-primary);
+  margin: 0 0 10px 0;
+  font-size: 1.1rem;
+  text-align: center; 
+}
+
+/* Das 2x2 Grid für die Stats */
+.grid-item-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); 
+  gap: 5px 12px; 
+  font-size: 0.8rem;
+}
+
+/* Einzelne Stat-Box im Grid */
+.grid-item-stat-box {
+  display: flex;
+  justify-content: space-between;
+  background-color: var(--color-bg-stat-box); 
+  padding: 4px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--color-border-stat-box); 
+}
+
+.stat-label {
+  color: var(--color-text-secondary);
+  padding-right: 5px;
+}
+
+.stat-value {
+  color: var(--color-success);
+  font-weight: bold;
+}
+
 /* ==========================================================================
    Klickbare MU-Karten Erweiterung
    ========================================================================== */
@@ -146,7 +143,7 @@
 /* Macht die gesamte Karte als Klick-Ziel erkennbar */
 .grid-item.clickable {
   cursor: pointer;
-  user-select: none; /* Verhindert unschönes Markieren von Text beim Doppelklick */
+  user-select: none; 
 }
 
 /* Verstärkter Hover-Effekt für klickbare Karten */
@@ -154,7 +151,7 @@
   transform: translateY(-4px);
   border-color: var(--color-primary);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  background-color: rgba(255, 255, 255, 0.02);
+  background-color: var(--color-bg-clickable-hover); 
 }
 
 /* Subtiler Effekt, wenn man die Karte gedrückt hält (Click-Feedback) */

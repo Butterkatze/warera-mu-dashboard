@@ -1,600 +1,556 @@
 import { getWarEraClient } from './apiwrapper.js';
 
-export class DataHandler {
-
-
-    constructor(initialArticleId = '', forceUpdate = false) {
-        this.client = getWarEraClient();
-        this.forceUpdate = forceUpdate
-        
-        // const ARTICLE_ID = '6a1f025b37df43a8d01bb9a2'; 
-        this.currentArticleId = initialArticleId; 
-
-        this.ARTICLE_CACHE = 5 * 60 * 1000; 
-        this.MU_CACHE= 15 * 60 * 1000;
-        this.USER_CACHE = 60 * 60 * 1000;     
+// ==========================================================================
+// ZENTRALE BASISKLASSE (Zustand-Weiterleitung, Cache-Steuerung & Mappers)
+// ==========================================================================
+class BaseSubHandler {
+    constructor(parent, cacheType) {
+        this.parent = parent;       
+        this.cacheType = cacheType;   
     }
 
-    // Methode, um die ID jederzeit von außen live zu ändern
-    setArticleId(newId) {
-        this.currentArticleId = newId;
-        console.log(`Klassen-Zustand geändert: Article ID ist jetzt ${this.currentArticleId}`);
+    get forceUpdate() {
+        return this.parent.forceUpdate;
     }
 
-    setForceUpdate(forceUpdate = false) {
-      this.forceUpdate = forceUpdate;
+    set forceUpdate(value) {
+        this.parent.forceUpdate = value;
     }
 
-    updateClient() {
-      this.client = getWarEraClient();
-      console.log("API-Client im DataHandler wurde mit neuem Token aktualisiert.");
-    }
-
-/* ==========================================================================
-    Article Funktionen
-    ========================================================================== */
-
-    async  #setArticleCache(articleCacheKey) {
-  
-    const response = await this.client.article.getArticleById({ articleId: this.currentArticleId });
-    /* Daten Formatierne*/
-    const articleData = response?.result?.data || response;
-    const formatedArticle = {
-        _id: articleData._id,
-        content: articleData.content || "",
+    get cacheConfig() {
+        const CONFIG = {
+            ARTICLE: { prefix: 'article_cache', duration: 5 * 60 * 1000 },
+            MU:      { prefix: 'mu_cache',      duration: 15 * 60 * 1000 },
+            USER:    { prefix: 'user_cache',    duration: 15 * 60 * 1000 },
+            COUNTRY: { prefix: 'countries_cache', duration: 24 * 60 * 60 * 1000 },
+            LAYOUT:  { prefix: 'custom_layout', duration: Infinity }
         };
-
-    /* Cache anlegen*/
-    
-    const now = Date.now();
-
-    localStorage.setItem(articleCacheKey, JSON.stringify({ data: formatedArticle, timestamp: now }));
-
-    return formatedArticle
+        return CONFIG[this.cacheType];
     }
 
-    async #getArticle(){
-    const now = Date.now();
-    const articleCacheKey = `article_cache_${this.currentArticleId}`;
-    const cached = localStorage.getItem(articleCacheKey);
+    getCacheKey(id = null) {
+        const prefix = this.cacheConfig.prefix;
+        return id ? `${prefix}_${id}` : `${prefix}`;
+    }
 
-    if (cached && !this.forceUpdate) {
-        const { data, timestamp } = JSON.parse(cached);
-        if (now - timestamp < this.ARTICLE_CACHE) {
+    getCacheData(id = null) {
+        if (this.forceUpdate) return null;
 
-            return data; 
+        try {
+            const cacheKey = this.getCacheKey(id);
+            const cached = localStorage.getItem(cacheKey);
+            if (!cached) return null;
+
+            const { data, timestamp } = JSON.parse(cached);
+            const duration = this.cacheConfig.duration;
+
+            if (duration === Infinity || (Date.now() - timestamp < duration)) {
+                return data;
+            }
+            
+            localStorage.removeItem(cacheKey);
+            return null;
+        } catch (error) {
+            console.error(`Fehler beim Lesen aus dem Cache (${this.cacheType}):`, error);
+            return null;
         }
     }
 
-    const formatedArticle = await this.#setArticleCache(articleCacheKey);
-    return formatedArticle
+    setCacheData(id, data) {
+        try {
+            const cacheKey = this.getCacheKey(id);
+            const cacheObj = { data, timestamp: Date.now() };
+            localStorage.setItem(cacheKey, JSON.stringify(cacheObj));
+        } catch (error) {
+            console.error(`Fehler beim Schreiben in den Cache (${this.cacheType}):`, error);
+        }
     }
 
-    async getArticleWrapper(){
-      const articleData = await this.#getArticle();
-      this.setForceUpdate()
-      return articleData
-
+    // CENTRALIZED FORMATTERS (MAPPERS)
+    mapArticleData(apiData) {
+        return { _id: apiData._id, content: apiData.content || "" };
     }
-/* ==========================================================================
-    MU Funktionen
-    ========================================================================== */
 
-    async #setMUCache(MU_ID, muCacheKey) {
-    
-        const now = Date.now();
-        const response = await this.client.mu.getById({ muId : MU_ID });
-        const muData = response?.result?.data || response;
+    mapCountryRow(country) {
+        let cleanCode = country.code ? country.code.toLowerCase() : "";
+        if (cleanCode === 'sj') cleanCode = 'no';
+        if (cleanCode === 'um') cleanCode = 'us';
+        if (cleanCode === 'bv') cleanCode = 'no';
+        if (cleanCode === 'hm') cleanCode = 'au';
+        return { _id: country._id, code: cleanCode };
+    }
 
-
-        const formatedMU = {
-
-            _id: muData._id,
-            avatarUrl: muData.avatarUrl,
-            name: muData.name,
-            managers: muData.roles?.managers,
-            commanders: muData.roles?.commanders,
-            members: muData.members,
+    mapMUData(apiData) {
+        return {
+            _id: apiData._id,
+            avatarUrl: apiData.avatarUrl,
+            name: apiData.name,
+            managers: apiData.roles?.managers,
+            commanders: apiData.roles?.commanders,
+            members: apiData.members,
             activeUpgradeLevels: {
-                "headquarters": muData.activeUpgradeLevels?.headquarters || 0,
-                "dormitories" : muData.activeUpgradeLevels?.dormitories  || 0,
+                "headquarters": apiData.activeUpgradeLevels?.headquarters || 0,
+                "dormitories" : apiData.activeUpgradeLevels?.dormitories  || 0,
             },
             rankings: {
-                "muWeeklyDamages"   : muData.rankings?.muWeeklyDamages?.value,
-                "muBounty"          : muData.rankings?.muBounty?.value,       
-                "muReputation"      : muData.rankings?.muReputation?.value,
-                "muDamages"         : muData.rankings?.muDamages?.value,
-                "muTerrain"         : muData.rankings?.muTerrain?.value,
-                "muWealth"          : muData.rankings?.muWealth?.value,
+                "muWeeklyDamages" : apiData.rankings?.muWeeklyDamages?.value,
+                "muBounty"        : apiData.rankings?.muBounty?.value,       
+                "muReputation"    : apiData.rankings?.muReputation?.value,
+                "muDamages"       : apiData.rankings?.muDamages?.value,
+                "muTerrain"       : apiData.rankings?.muTerrain?.value,
+                "muWealth"        : apiData.rankings?.muWealth?.value,
             },
         };
-
-        /* Cache anlegen*/
-        localStorage.setItem(muCacheKey, JSON.stringify({ data: formatedMU, timestamp: now }));
-        return formatedMU
     }
 
-    #parseMUFromArticle(articleData){
+    mapUserData(apiData, calculatedFlagCode = "") {
+        return {
+            _id: apiData._id,
+            avatarUrl: apiData.avatarUrl,
+            username: apiData.username,
+            country: calculatedFlagCode,
+            level: apiData.leveling?.level,
+            lastConnectionAt: apiData.dates?.lastConnectionAt,
+            isActive: apiData.isActive,
+            weeklyUserDamages: apiData.rankings?.weeklyUserDamages?.value,
+        };
+    }
+}
 
+// ==========================================================================
+// SUB-HANDLERS (Spezifische Feature-Logik mit privaten Kern-Methoden)
+// ==========================================================================
+
+class ArticleHandler extends BaseSubHandler {
+    constructor(parent) {
+        super(parent, 'ARTICLE');
+    }
+
+    async #getArticle() {
+        const cachedData = this.getCacheData(this.parent.currentArticleId);
+        if (cachedData) return cachedData;
+
+        const response = await this.parent.client.article.getArticleById({ articleId: this.parent.currentArticleId });
+        const articleData = response?.result?.data || response;
+        const formatedArticle = this.mapArticleData(articleData);
+        
+        this.setCacheData(this.parent.currentArticleId, formatedArticle);
+        return formatedArticle;
+    }
+
+    async getWrapper() {
+        const articleData = await this.#getArticle();
+        this.forceUpdate = false; 
+        return articleData;
+    }
+}
+
+class CountryHandler extends BaseSubHandler {
+    #laufendeCountryRequest = null; 
+
+    constructor(parent) {
+        super(parent, 'COUNTRY');
+    }
+
+    async #getCountries(countryId = null) {
+        let allCountries = this.getCacheData(null) || [];
+
+        if (allCountries.length === 0) {
+            if (!this.#laufendeCountryRequest) {
+                this.#laufendeCountryRequest = (async () => {
+                    const response = await this.parent.client.country.getAllCountries(); 
+                    const countryData = response?.result?.data || response;
+                    const formatedCountries = countryData.map(country => this.mapCountryRow(country));
+                    
+                    this.setCacheData(null, formatedCountries);
+                    return formatedCountries;
+                })();
+            }
+            allCountries = await this.#laufendeCountryRequest;
+            this.#laufendeCountryRequest = null; 
+        }
+
+        if (countryId) {
+            return allCountries.find(c => c._id === countryId) || null;
+        }
+        return allCountries;
+    }
+
+    async getWrapper(countryId = null) {
+        const result = await this.#getCountries(countryId);
+        this.forceUpdate = false; 
+        return result;
+    }
+    
+    async getInternalCountries(countryId = null) {
+        return await this.#getCountries(countryId);
+    }
+}
+
+class MuHandler extends BaseSubHandler {
+    constructor(parent) {
+        super(parent, 'MU');
+    }
+
+    #parseMUFromArticle(articleData) {
         const geparsteGruppen = [];
         if (!articleData || !articleData.content) return geparsteGruppen;
 
         const parts = articleData.content.split(/<h2[^>]*>/);
-        
         parts.forEach((part, index) => {
-          // Der erste Teil vor dem ersten <h2> hat keine Überschrift
-          if (index === 0) return; 
-          
-          // Extrahiere den Divisionsnamen (alles bis zum schließenden </h2>)
-          const nameMatch = part.match(/([^<]+)<\/h2>/);
-          if (!nameMatch) return;
-          
-          const divisionName = nameMatch[1].trim();
-          
-          const aktuelleGruppe = {
-              category: divisionName,
-              ids: []
-              };
+            if (index === 0) return; 
+            const nameMatch = part.match(/([^<]+)<\/h2>/);
+            if (!nameMatch) return;
+            
+            const divisionName = nameMatch[1].trim();
+            const aktuelleGruppe = { category: divisionName, ids: [] };
 
-          // MU ID Parser 
-          const muRegex = /muId&quot;:&quot;([a-f0-9]{24})/g;
-          let match;
-          while ((match = muRegex.exec(part)) !== null) {
-          aktuelleGruppe.ids.push(match[1]);
-          }
-          if (aktuelleGruppe.ids.length > 0) geparsteGruppen.push(aktuelleGruppe);
-          });
-
+            const muRegex = /muId&quot;:&quot;([a-f0-9]{24})/g;
+            let match;
+            while ((match = muRegex.exec(part)) !== null) {
+                aktuelleGruppe.ids.push(match[1]);
+            }
+            if (aktuelleGruppe.ids.length > 0) geparsteGruppen.push(aktuelleGruppe);
+        });
         return geparsteGruppen;
     }
 
-    async #getMU (geparsteGruppen){
+    #parseMarkdownFormat(rawText) {
+        const geparsteGruppen = [];
+        if (!rawText) return geparsteGruppen;
 
-        const apiTasks = []; 
-        const finalResults = []; 
-        const now = Date.now();
-      
-        // Map, um bereits erstellte API-Promises für IDs zu merken
-        const laufendeApiRequests = new Map();
-      
-        geparsteGruppen.forEach(gruppe => {
-          gruppe.ids.forEach(id => {
+        const parts = rawText.split(/^##\s+/m);
+        parts.forEach((part, index) => {
+            if (index === 0) return;
+            const lines = part.split(/\r?\n/);
+            const divisionName = lines[0].trim();
+            if (!divisionName) return;
 
-
-
-            const cacheKey = `mu_cache_${id}`;
-            const cached = localStorage.getItem(cacheKey);
-
-
-      
-            // A) Cache-Prüfung (Duplikate aus dem Cache sind kein Problem)
-            if (cached && !this.forceUpdate) {
-              try {
-                const { data, timestamp } = JSON.parse(cached);
-                if (now - timestamp < this.MU_CACHE) {
-                  finalResults.push({
-                    spaltenName: gruppe.category,
-                    id: id,
-                    objekt: data
-                  });
-                  return; 
-                }
-              } catch (e) {
-                console.error("Cache Parse Fehler:", e);
-              }
+            const aktuelleGruppe = { category: divisionName, ids: [] };
+            const restText = lines.slice(1).join("\n");
+            const muRegex = /muId&quot;:&quot;([a-f0-9]{24})/g;
+            let match;
+            
+            while ((match = muRegex.exec(restText)) !== null) {
+                aktuelleGruppe.ids.push(match[1]);
             }
-      
-            // B) Duplikat-Schutz für Netzwerk-Anfragen:
-            // Haben wir für DIESE ID in diesem Durchlauf schon einen API-Task erstellt?
-            if (laufendeApiRequests.has(id)) {
-              // Ja! Wir hängen uns einfach an denselben Task ran. 
-              // Die API wird kein zweites Mal gefragt, aber das Grid bekommt sein Objekt.
-              const duplicateTask = (async () => {
-                const muData = await laufendeApiRequests.get(id);
-                return {
-                  spaltenName: gruppe.category,
-                  id: id,
-                  objekt: muData
-                };
-              })();
-              
-              apiTasks.push(duplicateTask);
-              return;
-            }
-      
-            // C) Erster API-Request für diese ID (Kein Duplikat bisher)
-            // Wir lagern die reine API-Abfrage aus, damit wir das nackte Ergebnis teilen können
-            const fetchTask = (async () => {
-              try {
-      
-                return await this.#setMUCache( id, cacheKey)
-              
-              } catch (error) {
-                console.error(`Fehler bei ID ${id}:`, error);
-                return { _id: id, name: `Fehler (${id.substring(0,4)})`, members: [] };
-              }
-            })();
-      
-            // Wir merken uns dieses laufende Promise für exakt diese ID
-            laufendeApiRequests.set(id, fetchTask);
-      
-            // Für das Endergebnis aufbereiten
-            const mainTask = (async () => {
-              const muData = await fetchTask;
-              return {
-                spaltenName: gruppe.category,
-                id: id,
-                objekt: muData
-              };
-            })();
-      
-            apiTasks.push(mainTask);
-          });
+            if (aktuelleGruppe.ids.length > 0) geparsteGruppen.push(aktuelleGruppe);
         });
-      
-        /* #################    API-Anfragen gleichzeitig feuern   #################### */
-        if (apiTasks.length > 0) {
-          const apiResults = await Promise.all(apiTasks);
-          finalResults.push(...apiResults);
-        }
-      
-        return finalResults.filter(eintrag => eintrag !== null);
-
+        return geparsteGruppen;
     }
 
+    async #fetchAndCacheMU(MU_ID) {
+        const response = await this.parent.client.mu.getById({ muId : MU_ID });
+        const muData = response?.result?.data || response;
+        const formatedMU = this.mapMUData(muData);
+        
+        this.setCacheData(MU_ID, formatedMU);
+        return formatedMU;
+    }
+
+    async #getMU(geparsteGruppen) {
+      const apiTasks = []; 
+      const finalResults = []; 
+      const laufendeApiRequests = new Map();
+    
+      geparsteGruppen.forEach(gruppe => {
+          // LOKALER MAPPER: Erstellt das standardisierte Ergebnisobjekt
+          const erstelleErgebnisObjekt = (id, muData) => ({
+              spaltenName: gruppe.category,
+              id: id,
+              objekt: muData
+          });
+
+          gruppe.ids.forEach(id => {
+              const cachedData = this.getCacheData(id);
+
+              if (cachedData) {
+                  // 1. Nutzung beim Cache-Treffer
+                  finalResults.push(erstelleErgebnisObjekt(id, cachedData));
+                  return; 
+              }
+    
+              if (laufendeApiRequests.has(id)) {
+                  const duplicateTask = (async () => {
+                      const muData = await laufendeApiRequests.get(id);
+                      // 2. Nutzung beim Duplikat-Schutz (Laufender Request)
+                      return erstelleErgebnisObjekt(id, muData);
+                  })();
+                  apiTasks.push(duplicateTask);
+                  return;
+              }
+    
+              const fetchTask = (async () => {
+                  try {
+                      return await this.#fetchAndCacheMU(id);
+                  } catch (error) {
+                      console.error(`Fehler bei ID ${id}:`, error);
+                      return { _id: id, name: `Fehler (${id.substring(0,4)})`, members: [] };
+                  }
+              })();
+    
+              laufendeApiRequests.set(id, fetchTask);
+    
+              const mainTask = (async () => {
+                  const muData = await fetchTask;
+                  // 3. Nutzung nach erfolgreichem API-Fetch
+                  return erstelleErgebnisObjekt(id, muData);
+              })();
+              apiTasks.push(mainTask);
+          });
+      });
+    
+      if (apiTasks.length > 0) {
+          const apiResults = await Promise.all(apiTasks);
+          finalResults.push(...apiResults);
+      }
+      return finalResults.filter(eintrag => eintrag !== null);
+    }
 
     async getMUFromArticle() {
+        const customLayout = this.parent.layout.getCustomLayoutData();
 
-      //################ Falls Custom Layout Existiert ##################
-
-      const customCacheKey = `custom_layout_${this.currentArticleId}`;
-        const customLayoutRaw = localStorage.getItem(customCacheKey);
-
-        // Am Anfang und bei normalem Laden: Wenn ein Custom-Layout existiert, nutze es!
-        if (customLayoutRaw) {
-            try {
-                const { spalten } = JSON.parse(customLayoutRaw);
+        if (customLayout && customLayout.spalten) {
+            try { 
                 console.log("Custom-Layout im Speicher gefunden. Lade modifizierte Struktur...");
-                
-                const MUs = await this.#getMU(spalten);
-                this.setForceUpdate();
+                const MUs = await this.#getMU(customLayout.spalten);
+                this.forceUpdate = false;
                 return MUs;
             } catch (e) {
                 console.error("Fehler beim Parsen des Custom-Layouts, weiche auf API aus:", e);
             }
         }
 
-
-
-        const articleData = await this.#getArticle();
-
-        /*#################    Parser   ####################*/
-    
+        const articleData = await this.parent.articles.getWrapper();
         const geparsteGruppen = this.#parseMUFromArticle(articleData);
-
-        /*#################    Strucktur mit Division (gruppe ), Muid und Mu-daten (bzw MU objekt bauen)  ####################*/
+        const MUs = await this.#getMU(geparsteGruppen);
         
-        const MUs = await this.#getMU (geparsteGruppen);
-        this.setForceUpdate()
-        return MUs
+        this.forceUpdate = false;
+        return MUs;
     }   
 
 
+    //War mal html zu faul um die Variable zu ändern
+    exportSpaltenToMarkdown(spalten = []) {
+        let html = "";
+        spalten.forEach((spalte, index) => {
+            if (!spalte.ids || spalte.ids.length === 0) return;
+            if (index > 0) html += "\n";
+            html += `## ${spalte.category}\n\n`;
+            
+            spalte.ids.forEach(id => {
+                html += "\\\n";
+                html += `<span data-content-link="" data-content-type="mu" data-content-data="{&quot;muId&quot;:&quot;${id}&quot;,&quot;fullMatch&quot;:&quot;https://app.warera.io/mu/${id}&quot;}" data-original-text="https://app.warera.io/mu/${id}"></span>`;
+            });
+        });
+        return html;
+    }
 
+    parseMarkdownToSpalten(htmlText) {
+        if (!htmlText) return [];
+        return this.#parseMarkdownFormat(htmlText);
+    }
 
+    async getMultipleMusByIds(muIds = []) {
+        const bereinigteIds = [...new Set(muIds.filter(Boolean))];
+        if (bereinigteIds.length === 0) return new Map();
 
-/* ==========================================================================
-    MU Funktionen
-    ========================================================================== */
-
-
-    async #setUserCache(USER_ID, userCacheKey) {
-    
-      const now = Date.now();
-      const response = await this.client.user.getUserLite({ userId : USER_ID });
-      const userData = response?.result?.data || response;
-
-
-      const formatedUser = {
-
-          _id: userData._id,
-          avatarUrl: userData.avatarUrl,
-          username: userData.username,
-          country: userData.country,
-          level: userData.leveling?.level,
-          isActive: userData.isActive,
-          weeklyUserDamages: userData.rankings?.weeklyUserDamages?.value,
-      }
-         
-
-      /* Cache anlegen*/
-      localStorage.setItem(userCacheKey, JSON.stringify({ data: formatedUser, timestamp: now }));
-      return formatedUser
-  }
-
-
-  async #getUser(userIds = []) {
-    const apiTasks = []; 
-    const finalResults = []; 
-    const now = Date.now();
-    const laufendeApiRequests = new Map();
-
-    // Wir gehen durch jede übergebene User-ID
-    userIds.forEach(id => {
-      // Absicherung, falls IDs fälschlicherweise Objekte oder null/undefined sind
-      const cleanId = typeof id === 'object' ? (id._id || id.id) : id;
-      if (!cleanId) return;
-
-      const userCacheKey = `user_cache_${cleanId}`;
-      const cached = localStorage.getItem(userCacheKey);
-
-      // A) Cache-Prüfung (sofern kein forceUpdate erzwungen wird)
-      if (cached && !this.forceUpdate) {
         try {
-          const { data, timestamp } = JSON.parse(cached);
-          // Nutzt die für User definierte Cache-Zeit (z.B. USER_CACHE, falls vorhanden, sonst 1 Std)
-          const cacheDauer = this.USER_CACHE || 3600000; 
-
-          if (now - timestamp < cacheDauer) {
-            finalResults.push(data); // Drückt das formatierte User-Objekt direkt ins Ergebnis
-            return; 
-          }
-        } catch (e) {
-          console.error("User Cache Parse Fehler:", e);
-        }
-      }
-
-      // B) Duplikat-Schutz für laufende Netzwerk-Anfragen:
-      // Wurde für diese User-ID im aktuellen Schleifendurchlauf schon ein API-Task erstellt?
-      if (laufendeApiRequests.has(cleanId)) {
-        // Wir hängen uns an dasselbe Promise an. Die API wird nicht doppelt belastet.
-        const duplicateTask = (async () => {
-          return await laufendeApiRequests.get(cleanId);
-        })();
-        
-        apiTasks.push(duplicateTask);
-        return;
-      }
-
-      // C) Erster API-Request für diese User-ID (Kein Duplikat im aktuellen Lauf)
-      const fetchTask = (async () => {
-        try {
-          // Ruft deine bestehende Methode auf, die formatedUser generiert und speichert
-          return await this.#setUserCache(cleanId, userCacheKey);
+            const result = await this.#getMU([{ category: "bulk-fetch", ids: bereinigteIds }]);
+            const resultMap = new Map();
+            if (result && result.length > 0) {
+                result.forEach(item => {
+                    if (item && item.id && item.objekt) {
+                        resultMap.set(item.id.toString(), item.objekt);
+                    }
+                });
+            }
+            return resultMap;
         } catch (error) {
-          console.error(`Fehler bei User-ID ${cleanId}:`, error);
-          // Fallback-Objekt, damit die App nicht abstürzt, wenn ein User-Fetch fehlschlägt
-          return { 
-            _id: cleanId, 
-            username: `Fehler (${String(cleanId).substring(0,4)})`, 
-            avatarUrl: "",
-            level: 0,
-            isActive: false
-          };
+            console.error("Fehler beim Bulk-Laden der MUs im DataHandler:", error);
+            return new Map();
         }
-      })();
-
-      // Das laufende Promise in der Map für andere Duplikate reservieren
-      laufendeApiRequests.set(cleanId, fetchTask);
-      apiTasks.push(fetchTask);
-    });
-
-    /* #################  User-API-Anfragen gleichzeitig feuern  #################### */
-    if (apiTasks.length > 0) {
-      const apiResults = await Promise.all(apiTasks);
-      finalResults.push(...apiResults);
     }
-
-    // Liefert das saubere Array aus formatierten User-Objekten zurück
-    return finalResults.filter(user => user !== null);
-  }
-
-
-
-
-  async getMUUserData(muId) {
-    if (!muId) return { managers: [], commanders: [], members: [] };
-
-    const muResult = await this.#getMU([{ category: "temporary", ids: [muId] }]);
-
-    if (!muResult || muResult.length === 0 || !muResult[0].objekt) {
-      console.warn(`MU mit der ID ${muId} konnte nicht geladen werden.`);
-      return { managers: [], commanders: [], members: [] };
-    }
-
-    const muObjekt = muResult[0].objekt;
-
-    // 1. IDs extrahieren und strikt zu Strings konvertieren
-    const rawManagers = muObjekt.managers || [];
-    const managerIds = (Array.isArray(rawManagers) ? rawManagers : [rawManagers]).map(id => id?.toString()).filter(Boolean);
-    const commanderIds = (muObjekt.commanders || []).map(id => id?.toString()).filter(Boolean);
-    const memberIds = (muObjekt.members || []).map(id => id?.toString()).filter(Boolean);
-
-    // 2. Alle eindeutigen IDs laden
-    const alleUserIds = new Set([...managerIds, ...commanderIds, ...memberIds]);
-    const geladeneUser = await this.#getUser(Array.from(alleUserIds));
-
-    // 3. Wir bauen uns eine Map aus den geladenen Usern
-    // Wichtig: Wir filtern hier alles heraus, was kein echtes Objekt mit username ist!
-    const userMap = new Map();
-    geladeneUser.forEach(user => {
-      if (user && typeof user === 'object' && user._id) {
-        userMap.set(user._id.toString(), user);
-      }
-    });
-
-    // 4. Helfer-Funktion: Holt das Objekt aus der Map. 
-    // Falls die API für die ID versagt hat, BAUT sie ein gültiges Objekt zusammen,
-    // damit das Dashboard NIEMALS wieder nur eine nackte ID sieht!
-    const zwingeUserObjekt = (id, fallbackRolle) => {
-      const existierenderUser = userMap.get(id);
-      if (existierenderUser && existierenderUser.username) {
-        return existierenderUser;
-      }
-      
-      // Das hier fängt den Fehler auf deinem Screenshot ab!
-      return {
-        _id: id,
-        username: `${fallbackRolle} (${id.substring(0, 6)})`,
-        avatarUrl: "", // Platzhalter-Fragezeichen triggern
-        level: 0,
-        isActive: false
-      };
-    };
-
-    // 5. Arrays sauber gemappt zurückgeben
-
-    this.setForceUpdate()
     
-    return {
-      managers: managerIds.map(id => zwingeUserObjekt(id, "Manager")),
-      commanders: commanderIds.map(id => zwingeUserObjekt(id, "Commander")),
-      members: memberIds.map(id => zwingeUserObjekt(id, "Mitglied"))
-    };
-  }
+    async getInternalMU(geparsteGruppen) {
+        return await this.#getMU(geparsteGruppen);
+    }
+}
 
+class UserHandler extends BaseSubHandler {
+    constructor(parent) {
+        super(parent, 'USER');
+    }
 
+    async #fetchAndCacheUser(USER_ID) {
+        const response = await this.parent.client.user.getUserLite({ userId : USER_ID });
+        const userData = response?.result?.data || response;
 
- /* ==========================================================================
-     NEU & ANGEPASST: MU Editor Integrations-Methoden
-     ========================================================================== */
+        const countryObj = await this.parent.countries.getInternalCountries(userData.country);
+        const flagCode = countryObj ? countryObj.code : "";
 
-  #parseMarkdownFormat(rawText) {
-    const geparsteGruppen = [];
-    if (!rawText) return geparsteGruppen;
+        const formatedUser = this.mapUserData(userData, flagCode);
+        this.setCacheData(USER_ID, formatedUser);
+        return formatedUser;
+    }
 
-    // Teilt den Text anhand von Markdown-H2 Überschriften (## Name)
-    const parts = rawText.split(/^##\s+/m);
+    async #getUser(userIds = []) {
+        const apiTasks = []; 
+        const finalResults = []; 
+        const laufendeApiRequests = new Map();
 
-    parts.forEach((part, index) => {
-        // Der Teil vor dem ersten "##" enthält keine Division und wird ignoriert
-        if (index === 0) return;
+        userIds.forEach(id => {
+            const cleanId = typeof id === 'object' ? (id._id || id.id) : id;
+            if (!cleanId) return;
 
-        // Die erste Zeile dieses Parts ist der Name der Division
-        const lines = part.split(/\r?\n/);
-        const divisionName = lines[0].trim();
-        if (!divisionName) return;
+            const cachedData = this.getCacheData(cleanId);
+            if (cachedData) {
+                finalResults.push(cachedData);
+                return; 
+            }
 
-        const aktuelleGruppe = {
-            category: divisionName,
-            ids: []
+            if (laufendeApiRequests.has(cleanId)) {
+                const duplicateTask = (async () => await laufendeApiRequests.get(cleanId))();
+                apiTasks.push(duplicateTask);
+                return;
+            }
+
+            const fetchTask = (async () => {
+                try {
+                    return await this.#fetchAndCacheUser(cleanId);
+                } catch (error) {
+                    console.error(`Fehler bei User-ID ${cleanId}:`, error);
+                    return { 
+                        _id: cleanId, username: `Fehler (${String(cleanId).substring(0,4)})`, 
+                        avatarUrl: "", level: 0, isActive: false
+                    };
+                }
+            })();
+
+            laufendeApiRequests.set(cleanId, fetchTask);
+            apiTasks.push(fetchTask);
+        });
+
+        if (apiTasks.length > 0) {
+            const apiResults = await Promise.all(apiTasks);
+            finalResults.push(...apiResults);
+        }
+        return finalResults.filter(user => user !== null);
+    }
+
+    async getMUUserData(muId) {
+        if (!muId) return { managers: [], commanders: [], members: [] };
+
+        const muResult = await this.parent.mus.getInternalMU([{ category: "temporary", ids: [muId] }]);
+        if (!muResult || muResult.length === 0 || !muResult[0].objekt) {
+            console.warn(`MU mit der ID ${muId} konnte nicht geladen werden.`);
+            return { managers: [], commanders: [], members: [] };
+        }
+
+        const muObjekt = muResult[0].objekt;
+        const extrahiereId = (item) => {
+            if (!item) return null;
+            return typeof item === 'object' ? (item._id || item.id)?.toString() : item.toString();
         };
 
-        // Der restliche Text des Parts wird nach MU-IDs durchsucht
-        const restText = lines.slice(1).join("\n");
-        const muRegex = /muId&quot;:&quot;([a-f0-9]{24})/g;
-        let match;
+        const managerIds = (Array.isArray(muObjekt.managers) ? muObjekt.managers : [muObjekt.managers || []]).flatMap(item => item ? [extrahiereId(item)] : []).filter(Boolean);
+        const commanderIds = (Array.isArray(muObjekt.commanders) ? muObjekt.commanders : [muObjekt.commanders || []]).flatMap(item => item ? [extrahiereId(item)] : []).filter(Boolean);
+        const memberIds = (Array.isArray(muObjekt.members) ? muObjekt.members : [muObjekt.members || []]).flatMap(item => item ? [extrahiereId(item)] : []).filter(Boolean);
+
+        await this.parent.countries.getInternalCountries();
+
+        const alleUserIds = new Set([...managerIds, ...commanderIds, ...memberIds]);
+        const geladeneUser = await this.#getUser(Array.from(alleUserIds));
+
+        const userMap = new Map();
+        geladeneUser.forEach(user => {
+            if (user?._id) userMap.set(user._id.toString(), user);
+        });
+
+        const zwingeUserObjekt = (id, fallbackRolle) => {
+            const existierenderUser = userMap.get(id);
+            if (existierenderUser?.username) return existierenderUser;
+            return {
+                _id: id, username: `${fallbackRolle} (${id.substring(0, 6)})`,
+                avatarUrl: "", level: 0, isActive: false
+            };
+        };
+
+        this.forceUpdate = false;
         
-        while ((match = muRegex.exec(restText)) !== null) {
-            aktuelleGruppe.ids.push(match[1]);
-        }
-
-        if (aktuelleGruppe.ids.length > 0) {
-            geparsteGruppen.push(aktuelleGruppe);
-        }
-    });
-
-    return geparsteGruppen;
-  }
-
-
-
-    /**
-     * Erzeugt den exakten Code für den WarEra-Artikel im gewünschten Format.
-     * @param {Array} spalten - Der Spalten-State aus dem MuEditor
-     * @returns {string} Generierter HTML/Markdown-Code für den Export
-     */
-    exportSpaltenToHtml(spalten = []) {
-      let html = "";
-      spalten.forEach((spalte, index) => {
-          if (!spalte.ids || spalte.ids.length === 0) return;
-          
-          // Füge einen Zeilenumbruch vor der nächsten Gruppe ein, falls es nicht die erste ist
-          if (index > 0) html += "\n";
-          
-          html += `## ${spalte.category}\n\n`;
-
-          
-          
-          spalte.ids.forEach(id => {
-              html += "\\\n";
-              html += `<span data-content-link="" data-content-type="mu" data-content-data="{&quot;muId&quot;:&quot;${id}&quot;,&quot;fullMatch&quot;:&quot;https://app.warera.io/mu/${id}&quot;}" data-original-text="https://app.warera.io/mu/${id}"></span>`;
-          });
-      });
-      return html;
-  }
-
-  /**
-   * Parst ein manuell reinkopiertes Text-Format (inklusive Backslashes) direkt.
-   * @param {string} htmlText - Reinkopierter String aus dem Artikel
-   * @returns {Array} Formatierte Gruppen für den Editor-State
-   */
-  /**
-   * ANGEPASST: Nutzt jetzt exklusiv den neuen Markdown-Parser für das manuelle UI-Feld
-   * @param {string} htmlText - Reinkopierter Text aus dem Artikel
-   * @returns {Array} Formatierte Gruppen für den Editor-State
-   */
-  parseRawHtmlContent(htmlText) {
-    if (!htmlText) return [];
-    // Ruft isoliert die neue Markdown-Logik auf. #parseMUFromArticle bleibt unangetastet!
-    return this.#parseMarkdownFormat(htmlText);
-  }
-
-
-  /**
-     * Lädt Details für ein Array von MU-IDs parallel nach.
-     * Nutzt im Hintergrund die caching- und duplikatsichere Methode #getMU.
-     * Kann auch für einzelne IDs genutzt werden (z.B. [muId]).
-     * @param {Array<string>} muIds - Array aus 24-stelligen Hex-IDs
-     * @returns {Promise<Map<string, object>>} Eine Map mit id -> formatierte MU-Objektdaten
-     */
-  async getMultipleMusByIds(muIds = []) {
-    const bereinigteIds = [...new Set(muIds.filter(Boolean))]; // Duplikate direkt filtern
-    if (bereinigteIds.length === 0) return new Map();
-
-    try {
-        // Wir faken eine temporäre Gruppe, um die interne #getMU-Logik anzusteuern
-        const result = await this.#getMU([{ category: "bulk-fetch", ids: bereinigteIds }]);
-        
-        const resultMap = new Map();
-        if (result && result.length > 0) {
-            result.forEach(item => {
-                if (item && item.id && item.objekt) {
-                    resultMap.set(item.id.toString(), item.objekt);
-                }
-            });
-        }
-        return resultMap;
-    } catch (error) {
-        console.error("Fehler beim Bulk-Laden der MUs im DataHandler:", error);
-        return new Map();
+        return {
+            managers: managerIds.map(id => zwingeUserObjekt(id, "Manager")),
+            commanders: commanderIds.map(id => zwingeUserObjekt(id, "Commander")),
+            members: memberIds.map(id => zwingeUserObjekt(id, "Mitglied"))
+        };
     }
-  }
-  
+}
 
+class LayoutHandler extends BaseSubHandler {
+    constructor(parent) {
+        super(parent, 'LAYOUT');
+    }
 
+    getCustomLayoutData() {
+        return this.getCacheData(this.parent.currentArticleId);
+    }
 
-/* ==========================================================================
-   Lokales Layout-Caching (Steuerung exklusiv über Editor-Buttons)
-   ========================================================================== */
-
-    /**
-     * Speichert ein manipuliertes Layout lokal ab.
-     * Wird ein leeres Array übergeben, wird das Custom-Layout gelöscht.
-     * @param {Array} spalten - Die Struktur aus dem Editor
-     */
     saveCustomLayout(spalten = []) {
-      const cacheKey = `custom_layout_${this.currentArticleId}`;
-      if (!spalten || spalten.length === 0) {
-          localStorage.removeItem(cacheKey);
-          console.log("Custom-Layout wurde gelöscht. Artikel-Standard ist wieder aktiv.");
-          return;
-      }
-      localStorage.setItem(cacheKey, JSON.stringify({
-          spalten,
-          timestamp: Date.now()
-      }));
-      console.log("Custom-Layout erfolgreich lokal gespeichert.");
+        if (!spalten || spalten.length === 0) {
+            localStorage.removeItem(this.getCacheKey(this.parent.currentArticleId));
+            console.log("Custom-Layout wurde gelöscht. Artikel-Standard ist wieder aktiv.");
+            return;
+        }
+        this.setCacheData(this.parent.currentArticleId, { spalten });
+        console.log("Custom-Layout erfolgreich lokal gespeichert.");
+    }
+}
+
+// ==========================================================================
+// CENTRAL DATA HANDLER (Der Orchestrator / Einstiegspunkt für React)
+// ==========================================================================
+export class DataHandler {
+    constructor(initialArticleId = '', forceUpdate = false) {
+        this.client = getWarEraClient();
+        this._forceUpdate = forceUpdate;
+        this.currentArticleId = initialArticleId; 
+
+        this.articles = new ArticleHandler(this);
+        this.countries = new CountryHandler(this);
+        this.mus = new MuHandler(this);
+        this.users = new UserHandler(this);
+        this.layout = new LayoutHandler(this);
     }
 
+    get forceUpdate() {
+        return this._forceUpdate;
+    }
+
+    set forceUpdate(value) {
+        this._forceUpdate = !!value;
+        console.log(`Zentraler forceUpdate-Zustand geändert auf: ${this._forceUpdate}`);
+    }
+
+    setArticleId(newId) {
+        this.currentArticleId = newId;
+    }
+
+    setForceUpdate(forceUpdate = false) {
+        this.forceUpdate = forceUpdate;
+    }
+
+    updateClient() {
+        this.client = getWarEraClient();
+    }
+
+    // Öffentliche Schnittstellen für React
+    async getArticleWrapper() { return await this.articles.getWrapper(); }
+    async getCountriesWrapper(countryId = null) { return await this.countries.getWrapper(countryId); }
+    async getMUFromArticle() { return await this.mus.getMUFromArticle(); }
+    async getMUUserData(muId) { return await this.users.getMUUserData(muId); }
+    
+    exportSpaltenToHtml(spalten) { return this.mus.exportSpaltenToHtml(spalten); }
+    parseRawHtmlContent(htmlText) { return this.mus.parseRawHtmlContent(htmlText); }
+    async getMultipleMusByIds(muIds) { return await this.mus.getMultipleMusByIds(muIds); }
+    saveCustomLayout(spalten) { this.layout.saveCustomLayout(spalten); }
 }

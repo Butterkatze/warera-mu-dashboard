@@ -11,11 +11,11 @@ function MuGeneralStats({ rankings = {}, activeUpgradeLevels = {} }) {
       <div className="mu-stats-grid">
         <div className="mu-stat-entry">
           <span className="mu-label">Kontostand:</span>
-          <span className="mu-value text-gold">{rankings.muWealth?.toLocaleString() || '0'} BTC</span>
+          <span className="mu-value text-gold">{rankings.muWealth?.toLocaleString('de-DE') || '0'} BTC</span>
         </div>
         <div className="mu-stat-entry">
           <span className="mu-label">Wöchentlicher Schaden:</span>
-          <span className="mu-value">{rankings.muWeeklyDamages?.toLocaleString() || '0'}</span>
+          <span className="mu-value">{rankings.muWeeklyDamages?.toLocaleString('de-DE') || '0'}</span>
         </div>
         <div className="mu-stat-entry">
           <span className="mu-label">HQ:</span>
@@ -106,7 +106,7 @@ function MuUserList({ members = [], muUsers = [], isLoadingUsers = false }) {
   // 1. States für Sortier-Spalte und Richtung definieren
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'desc' });
 
-  const displayList = muUsers.length > 0 ? muUsers : members;
+  const displayList = muUsers && muUsers.length > 0 ? muUsers : members;
 
   // 2. Sortier-Handler: Wechselt Richtung oder Spalte bei Klick
   const requestSort = (key) => {
@@ -147,9 +147,21 @@ function MuUserList({ members = [], muUsers = [], isLoadingUsers = false }) {
   });
 
   // Helper, um den aktiven Sortier-Pfeil im Header anzuzeigen
-  const getClassNamesFor = (name) => {
-    if (sortConfig.key !== name) return '';
-    return sortConfig.direction === 'asc' ? ' ▲' : ' ▼';
+  const renderSortArrow = (name) => {
+    // Ist das die aktuell sortierte Spalte?
+    const isActive = sortConfig.key === name;
+    // Wenn aktiv, nimm die echte Richtung, sonst Standard 'desc' für den Platzhalter
+    const arrow = isActive && sortConfig.direction === 'asc' ? '▲' : '▼';
+  
+    return (
+      <span style={{ 
+        visibility: isActive ? 'visible' : 'hidden', 
+        marginLeft: '6px',
+        display: 'inline-block' 
+      }}>
+        {arrow}
+      </span>
+    );
   };
 
   return (
@@ -165,18 +177,17 @@ function MuUserList({ members = [], muUsers = [], isLoadingUsers = false }) {
           <table className="mu-user-table">
             <thead>
               <tr>
-                {/* CSS-Tipp: Füge der Klasse '.sortable-header' im CSS 'cursor: pointer' hinzu */}
                 <th onClick={() => requestSort('name')} className="sortable-header">
-                  Name / ID{getClassNamesFor('name')}
+                  Name / ID {renderSortArrow('name')}
                 </th>
                 <th onClick={() => requestSort('damage')} className="sortable-header">
-                  Weekly Damage{getClassNamesFor('damage')}
+                  Weekly Damage {renderSortArrow('damage')}
                 </th>
                 <th onClick={() => requestSort('level')} className="sortable-header">
-                  Userlevel{getClassNamesFor('level')}
+                  Userlevel {renderSortArrow('level')}
                 </th>
                 <th onClick={() => requestSort('active')} className="sortable-header">
-                  Aktiver Bürger{getClassNamesFor('active')}
+                  Aktiver Bürger {renderSortArrow('active')}
                 </th>
               </tr>
             </thead>
@@ -185,21 +196,55 @@ function MuUserList({ members = [], muUsers = [], isLoadingUsers = false }) {
                 const isObject = typeof user === 'object';
                 const userName = isObject ? user.username : `User-ID: ${user}`;
                 const userRank = isObject && user.level ? `Level ${user.level}` : 'Mitglied';
-                const weeklyDamage = isObject && user.weeklyUserDamages ? user.weeklyUserDamages.toLocaleString() : '0';
+                const weeklyDamage = isObject && user.weeklyUserDamages ? user.weeklyUserDamages.toLocaleString('de-DE') : '0';
                 const isActive = isObject ? (user.isActive ? 'aktiv' : 'inaktiv') : 'keine Daten';
                 const hasAvatar = isObject && user.avatarUrl && user.avatarUrl !== "";
 
                 return (
                   <tr key={user._id || idx}>
                     <td className="user-name-cell">
-                      <div className="mu-table-avatar-wrapper">
-                        {hasAvatar ? (
-                          <img src={user.avatarUrl} alt={userName} className="mu-table-avatar" />
-                        ) : (
-                          <div className="mu-table-avatar-placeholder">?</div>
-                        )}
+                      <div className="mu-table-flex-container">
+                        
+                        {/* AVATAR WRAPPER (Hier muss alles rein!) */}
+                        <div className="mu-table-avatar-wrapper">
+                          {hasAvatar ? (
+                            <img src={user.avatarUrl} alt={userName} className="mu-table-avatar" />
+                          ) : (
+                            <div className="mu-table-avatar-placeholder">?</div>
+                          )}
+
+                          {/* LANDESFLAGGE: Jetzt INSIDE dem relativen Wrapper */}
+                          {isObject && user.country && (
+                            (() => {
+                              const countryData = user.country;
+                              if (typeof countryData === 'string' && countryData.length <= 3) {
+                                const cleanCode = countryData.trim().toLowerCase();
+                                try {
+                                  const flagUrl = new URL(`./flags/${cleanCode}.svg`, import.meta.url).href;
+                                  return (
+                                    <img 
+                                      src={flagUrl} 
+                                      alt={`Flagge ${cleanCode}`} 
+                                      className="mu-table-flag-overlay"
+                                      onError={(e) => { 
+                                        e.target.onerror = null; 
+                                        e.target.style.display = 'none'; 
+                                      }}
+                                    />
+                                  );
+                                } catch (err) {
+                                  console.error("Fehler beim Laden des SVG-Pfads", err);
+                                  return null;
+                                }
+                              }
+                              return null;
+                            })()
+                          )}
+                        </div> {/* Ende des Wrappers */}
+
+                        {/* 3. USERNAME TEXT */}
+                        <span className="mu-table-username-text">{userName}</span>
                       </div>
-                      <span className="mu-table-username-text">{userName}</span>
                     </td>
                     <td>{weeklyDamage}</td>
                     <td>{userRank}</td>
@@ -255,7 +300,7 @@ function MuDashboard({ selectedMu = null, dataHandler }) {
     <div className="mu-dashboard-wrapper">
       <div className="mu-dashboard-header">
         {muData.avatarUrl && <img src={muData.avatarUrl} alt={muData.name} className="mu-dashboard-avatar" />}
-        <h2>{muData.name} ÜBERBLICK</h2>
+        <h2>{muData.name} Überblick</h2>
       </div>
 
       {/* Oberer Bereich: Nebeneinander aufgeteilt */}
