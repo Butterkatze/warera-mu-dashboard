@@ -549,8 +549,8 @@ export class DataHandler {
     async getMUFromArticle() { return await this.mus.getMUFromArticle(); }
     async getMUUserData(muId) { return await this.users.getMUUserData(muId); }
     
-    exportSpaltenToHtml(spalten) { return this.mus.exportSpaltenToHtml(spalten); }
-    parseRawHtmlContent(htmlText) { return this.mus.parseRawHtmlContent(htmlText); }
+    exportSpaltenToMarkdown(spalten) { return this.mus.exportSpaltenToMarkdown(spalten); }
+    parseMarkdownToSpalten(htmlText) { return this.mus.parseMarkdownToSpalten(htmlText); }
     async getMultipleMusByIds(muIds) { return await this.mus.getMultipleMusByIds(muIds); }
     saveCustomLayout(spalten) { this.layout.saveCustomLayout(spalten); }
 }
