@@ -7,7 +7,7 @@
     flex-direction: column;
     gap: 20px;
     margin-top: 20px;
-    background-color: rgba(255, 255, 255, 0.01);
+    background-color: var(--color-bg-grid-column);
     border: 1px solid var(--color-border);
     border-radius: 12px;
     padding: 20px;
@@ -59,7 +59,7 @@
     text-transform: uppercase;
     font-size: 1rem;
     letter-spacing: 0.5px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid var(--color-border-stat-box);
     padding-bottom: 5px;
   }
   
@@ -73,7 +73,7 @@
   .mu-stat-entry {
     display: flex;
     flex-direction: column;
-    background-color: rgba(0, 0, 0, 0.2);
+    background-color: var(--color-bg-stat-box);
     padding: 8px 12px;
     border-radius: 6px;
   }
@@ -90,8 +90,9 @@
     color: var(--color-success);
   }
   
+  /* Spezifische Text-Farben */
   .text-gold {
-    color: #ffd700;
+    color: #ffd700; /* Beibehalten, da es eine feste Akzentfarbe für Gold-Ränge/Werte ist */
   }
   
   /* Management Listen */
@@ -124,7 +125,7 @@
      ========================================================================== */
   
   .mu-user-table-wrapper {
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--color-border-stat-box);
     border-radius: 6px;
   }
   
@@ -136,7 +137,7 @@
   }
   
   .mu-user-table th {
-    background-color: rgba(0, 0, 0, 0.3);
+    background-color: var(--color-bg-stat-box);
     color: var(--color-text-secondary);
     padding: 10px;
     font-weight: 600;
@@ -147,13 +148,13 @@
   
   .mu-user-table td {
     padding: 8px 10px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid var(--color-border-stat-box);
     color: var(--color-text-primary);
-    vertical-align: middle; /* Sorgt dafür, dass alle Zelleninhalte mittig sitzen */
+    vertical-align: middle;
   }
   
   .mu-user-table tr:hover {
-    background-color: rgba(255, 255, 255, 0.02);
+    background-color: var(--color-bg-clickable-hover);
   }
   
   .user-name-cell {
@@ -208,16 +209,16 @@
     gap: 12px;
     padding: 8px 12px;
     border-radius: 6px;
-    background-color: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    background-color: var(--color-bg-clickable-hover);
+    border: 1px solid var(--color-border-stat-box);
   }
   
   .mu-leader-card.manager-item {
-    border-left: 3px solid #ffb74d; /* Orange/Gold für Manager */
+    border-left: 3px solid #ffb74d; /* Feste Kennzeichnungsfarbe für Manager-Rolle */
   }
   
   .mu-leader-card.commander-item {
-    border-left: 3px solid #64b5f6; /* Blau für Commander */
+    border-left: 3px solid #64b5f6; /* Feste Kennzeichnungsfarbe für Commander-Rolle */
   }
   
   .mu-leader-avatar-wrapper {
@@ -231,15 +232,15 @@
     height: 100%;
     border-radius: 50%;
     object-fit: cover;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid var(--color-border-stat-box);
   }
   
   .mu-leader-avatar-placeholder {
     width: 100%;
     height: 100%;
     border-radius: 50%;
-    background-color: rgba(255, 255, 255, 0.1);
-    color: #fff;
+    background-color: var(--color-bg-stat-box);
+    color: var(--color-text-primary);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -251,14 +252,13 @@
   .mu-leader-name {
     font-size: 14px;
     font-weight: 500;
-    color: var(--color-text-primary, #ffffff);
+    color: var(--color-text-primary);
   }
   
   /* ==========================================================================
      Erweiterung für Avatare in der Mitglieder-Tabelle
      ========================================================================== */
   
-  /* Container für die Zelle, damit die Tabellenstruktur intakt bleibt */
   .mu-table-avatar-wrapper {
     position: relative;
     width: 40px;  
@@ -272,7 +272,7 @@
     height: 100%;
     border-radius: 50%;
     object-fit: cover;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--color-border-stat-box);
     display: block;
   }
   
@@ -281,9 +281,9 @@
     width: 100%;
     height: 100%;
     border-radius: 50%;
-    background-color: rgba(255, 255, 255, 0.08);
-    color: #aaa;
-    display: flex; /* Optimiert: Flexbox für perfekte Zentrierung des "?" hinzugefügt */
+    background-color: var(--color-bg-stat-box);
+    color: var(--color-text-muted);
+    display: flex;
     align-items: center;
     justify-content: center;
     font-size: 12px;
@@ -293,16 +293,16 @@
   /* Text-Styling innerhalb der Tabellenzelle */
   .mu-table-username-text {
     font-size: 14px;
-    color: var(--color-text-primary, #ffffff);
+    color: var(--color-text-primary);
   }
   
   .sortable-header {
     cursor: pointer;
-    user-select: none; /* Verhindert unschönes Markieren des Textes bei schnellen Klicks */
+    user-select: none;
   }
   
   .sortable-header:hover {
-    background-color: rgba(255, 255, 255, 0.05); /* Dezenter Hover-Effekt */
+    background-color: var(--color-bg-stat-box);
   }
   
   /* Container, der Avatar, Flagge und Text in der Zelle nebeneinander anordnet */
@@ -315,13 +315,13 @@
   /* Die Landesflagge schwebt absolut über der unteren linken Ecke des Avatars */
   .mu-table-flag-overlay {
     position: absolute;
-    bottom: -2px;              /* Leicht optimiert für eine perfektere Kantenführung */
-    left: -2px;                /* Leicht optimiert für eine perfektere Kantenführung */
-    width: 18px;               /* Ideale Breite für eine kleine Flagge */
-    height: 12px;              /* Ideale Höhe für eine kleine Flagge */
+    bottom: -2px;
+    left: -2px;
+    width: 18px;
+    height: 12px;
     object-fit: cover;
-    border-radius: 2px;        /* Leicht abgerundete Ecken */
+    border-radius: 2px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6), 
-                0 0 0 1px rgba(255, 255, 255, 0.15); /* Schatten + zarte Kontur für Kontrast */
-    z-index: 5;                /* Bleibt immer über dem Avatar sichtbar */
+                0 0 0 1px var(--color-border-stat-box);
+    z-index: 5;
   }

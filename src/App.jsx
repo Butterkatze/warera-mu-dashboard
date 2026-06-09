@@ -44,25 +44,20 @@ function App() {
   const [selectedMu, setSelectedMu] = useState(null);
 
 
-  const [muData, setMuData] = useState(() => {
-    const savedKey = localStorage.getItem("warera_api_key") || FAKE_KEY;
-    const savedId = localStorage.getItem("warera_article_id") || DEFAULT_ARTICLE_ID;
-    
-    if (savedKey !== FAKE_KEY) {
-      const cacheKey = `mu_cache_${savedId}`;
-      try {
-        const cachedData = localStorage.getItem(cacheKey);
-        if (cachedData) {
-          // Cache-Boot Vorbereitung (falls benötigt)
-        }
-      } catch (e) {
-        console.error("Cache-Boot-Fehler", e);
-      }
-    }
-    return [];
-  });    
+  const [muData, setMuData] = useState([]); 
 
-//##########################   fake funtions #####################/
+/* ==========================================================================
+    History Handling. (Für Vorwärts und rückwärts kram)
+    ========================================================================== */
+
+  useEffect(() => {
+    // Wenn die Seite frisch lädt und der Browser noch einen alten Dashboard-State im Speicher hat,
+    // überschreiben wir diesen sofort, damit beim "Zurück"-Klicken nichts hängenbleibt.
+    if (window.history.state?.view === 'dashboard') {
+      window.history.replaceState(null, '');
+    }
+  }, []); 
+
 
   useEffect(() => {
     if (selectedMu) {
@@ -77,16 +72,15 @@ function App() {
       const state = event.state;
 
       if (state && state.view === 'dashboard' && state.muId) {
-        // VORWÄRTS: Der Browser-State hat eine ID? Dann suchen wir die passende MU aus muData
+        
         const passendeMu = muData.find(eintrag => eintrag.id === state.muId);
+        
         if (passendeMu) {
           setSelectedMu(passendeMu);
-        } else {
-          // Fallback, falls muData noch leer ist oder frisch lädt
+        } else {  
           setSelectedMu(null);
         }
       } else {
-        // ZURÜCK: Kein gültiger Dashboard-State? Zurück zur Übersicht!
         setSelectedMu(null);
       }
     };
@@ -103,10 +97,12 @@ function App() {
     setSelectedMu(null);
 
     if (window.history.state?.view === 'dashboard') {
-      window.history.back(); // Löst das popstate-Event aus
+      window.history.back(); 
     }
   };
-
+/* ==========================================================================
+    Basic Fake Funktions
+    ========================================================================== */
 
   const handleLoadData = async (targetId, forceUpdate = false) => {
     if (!targetId) return;
@@ -142,7 +138,11 @@ function App() {
     setShowTokenPopup(false);
     handleLoadData(articleId);
   };
-  //####################### html ##################/
+
+
+/* ==========================================================================
+    Html
+    ========================================================================== */
     return (
     <>
       {showTokenPopup && (

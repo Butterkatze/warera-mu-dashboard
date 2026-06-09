@@ -4,19 +4,136 @@ export class DataHandler {
 
 
     constructor(initialArticleId = '', forceUpdate = false) {
+
         this.client = getWarEraClient();
         this.forceUpdate = forceUpdate
         
-        // const ARTICLE_ID = '6a1f025b37df43a8d01bb9a2'; 
         this.currentArticleId = initialArticleId; 
 
-        this.ARTICLE_CACHE = 5 * 60 * 1000; 
-        this.MU_CACHE= 15 * 60 * 1000;
-        this.USER_CACHE = 15 * 60 * 1000;
-        this.COUNTRY_CACHE = 24 * 60 * 60 * 1000;     
+        // Zentrale Konfiguration aller Caches (duration in ms)
+        this.CACHE_CONFIG = {
+          ARTICLE: { prefix: 'article_cache', duration: 5 * 60 * 1000 },
+          MU:      { prefix: 'mu_cache',      duration: 15 * 60 * 1000 },
+          USER:    { prefix: 'user_cache',    duration: 15 * 60 * 1000 },
+          COUNTRY: { prefix: 'countries_cache', duration: 24 * 60 * 60 * 1000 },
+          LAYOUT:  { prefix: 'custom_layout', duration: Infinity }
+         };   
     }
 
-    // Methode, um die ID jederzeit von außen live zu ändern
+/* ==========================================================================
+    ZENTRALE FORMATIERER (MAPPERS)
+    Hier anpassen, wenn neue Datenfelder im Cache benötigt werden!
+    ========================================================================== */
+    #mapArticleData(apiData) {
+      return {
+          _id: apiData._id,
+          content: apiData.content || "",
+      };
+    }
+
+    #mapCountryRow(country) {
+        let cleanCode = country.code ? country.code.toLowerCase() : "";
+        if (cleanCode === 'sj') cleanCode = 'no';
+        if (cleanCode === 'um') cleanCode = 'us';
+        if (cleanCode === 'bv') cleanCode = 'no';
+        if (cleanCode === 'hm') cleanCode = 'au';
+
+        return {
+            _id: country._id,
+            code: cleanCode
+        };
+    }
+
+    #mapMUData(apiData) {
+        return {
+            _id: apiData._id,
+            avatarUrl: apiData.avatarUrl,
+            name: apiData.name,
+            managers: apiData.roles?.managers,
+            commanders: apiData.roles?.commanders,
+            members: apiData.members,
+            activeUpgradeLevels: {
+                "headquarters": apiData.activeUpgradeLevels?.headquarters || 0,
+                "dormitories" : apiData.activeUpgradeLevels?.dormitories  || 0,
+            },
+            rankings: {
+                "muWeeklyDamages" : apiData.rankings?.muWeeklyDamages?.value,
+                "muBounty"        : apiData.rankings?.muBounty?.value,       
+                "muReputation"    : apiData.rankings?.muReputation?.value,
+                "muDamages"       : apiData.rankings?.muDamages?.value,
+                "muTerrain"       : apiData.rankings?.muTerrain?.value,
+                "muWealth"        : apiData.rankings?.muWealth?.value,
+            },
+        };
+    }
+
+    #mapUserData(apiData, calculatedFlagCode = "") {
+        return {
+            _id: apiData._id,
+            avatarUrl: apiData.avatarUrl,
+            username: apiData.username,
+            country: calculatedFlagCode,
+            level: apiData.leveling?.level,
+            isActive: apiData.isActive,
+            weeklyUserDamages: apiData.rankings?.weeklyUserDamages?.value,
+        };
+    }    
+
+/* ==========================================================================
+   Cache Funktionen. 
+    ========================================================================== */
+    
+    #getCacheKey(type, id = null) {
+      const prefix = this.CACHE_CONFIG[type].prefix;
+      return id ? `${prefix}_${id}` : `${prefix}_all`;
+    }
+
+    #setCacheData(type, id, data) {
+      try {
+          const cacheKey = this.#getCacheKey(type, id);
+          const cacheObj = {
+              data,
+              timestamp: Date.now()
+          };
+          localStorage.setItem(cacheKey, JSON.stringify(cacheObj));
+      } catch (error) {
+          console.error(`Fehler beim Schreiben in den Cache (${type}):`, error);
+      }
+    }
+
+    #getCacheData(type, id = null) {
+      // Wenn forceUpdate aktiv ist, ignorieren wir den Cache sofort
+      if (this.forceUpdate) return null;
+
+      try {
+          const cacheKey = this.#getCacheKey(type, id);
+          const cached = localStorage.getItem(cacheKey);
+          if (!cached) return null;
+
+          const { data, timestamp } = JSON.parse(cached);
+          const duration = this.CACHE_CONFIG[type].duration;
+
+          // Wenn die Dauer "Infinity" ist (z.B. beim Layout) oder die Zeit noch passt, gib die Daten zurück
+          if (duration === Infinity || (Date.now() - timestamp < duration)) {
+              return data;
+          }
+          
+          // Optional: Abgelaufene Daten direkt löschen
+          localStorage.removeItem(cacheKey);
+          return null;
+      } catch (error) {
+          console.error(`Fehler beim Lesen aus dem Cache (${type}):`, error);
+          return null;
+      }
+  }
+
+
+
+/* ==========================================================================
+    Externe Class Config Funktionen  
+========================================================================== */
+
+
     setArticleId(newId) {
         this.currentArticleId = newId;
         console.log(`Klassen-Zustand geändert: Article ID ist jetzt ${this.currentArticleId}`);
@@ -31,44 +148,29 @@ export class DataHandler {
       console.log("API-Client im DataHandler wurde mit neuem Token aktualisiert.");
     }
 
+    
+  
 /* ==========================================================================
     Article Funktionen
     ========================================================================== */
 
-    async  #setArticleCache(articleCacheKey) {
+    async  #setArticleCache() {
   
-    const response = await this.client.article.getArticleById({ articleId: this.currentArticleId });
-    /* Daten Formatierne*/
-    const articleData = response?.result?.data || response;
-    const formatedArticle = {
-        _id: articleData._id,
-        content: articleData.content || "",
-        };
+      const response = await this.client.article.getArticleById({ articleId: this.currentArticleId });
+      const articleData = response?.result?.data || response;
 
-    /* Cache anlegen*/
-    
-    const now = Date.now();
-
-    localStorage.setItem(articleCacheKey, JSON.stringify({ data: formatedArticle, timestamp: now }));
-
-    return formatedArticle
+      const formatedArticle = this.#mapArticleData(articleData);
+      
+      this.#setCacheData('ARTICLE', this.currentArticleId, formatedArticle);
+      return formatedArticle
     }
 
     async #getArticle(){
-    const now = Date.now();
-    const articleCacheKey = `article_cache_${this.currentArticleId}`;
-    const cached = localStorage.getItem(articleCacheKey);
+      const cachedData = this.#getCacheData('ARTICLE', this.currentArticleId);
+      if (cachedData) return cachedData;
 
-    if (cached && !this.forceUpdate) {
-        const { data, timestamp } = JSON.parse(cached);
-        if (now - timestamp < this.ARTICLE_CACHE) {
-
-            return data; 
-        }
-    }
-
-    const formatedArticle = await this.#setArticleCache(articleCacheKey);
-    return formatedArticle
+      // Falls kein Cache da ist, neu laden
+      return await this.#setArticleCache();
     }
 
     async getArticleWrapper(){
@@ -82,57 +184,25 @@ export class DataHandler {
     Country Funktionen
     ========================================================================== */
 
-    async #setCountryCache(countryCacheKey) {
-      const now = Date.now();
+    async #setCountryCache() {
       const response = await this.client.country.getAllCountries(); 
       const countryData = response?.result?.data || response;
 
-      if (!Array.isArray(countryData)) {
-          console.warn("Country-API lieferte kein gültiges Array.");
-          return [];
-      }
 
-      const formatedCountries = countryData.map(country => {
-          let cleanCode = country.code ? country.code.toLowerCase() : "";
-
-          // Mapping-Tabelle für die fehlerhaften/fehlenden SVG-Kürzel
-          if (cleanCode === 'sj') cleanCode = 'no'; // Svalbard -> Norwegen
-          if (cleanCode === 'um') cleanCode = 'us'; // US Minor Islands -> USA
-          if (cleanCode === 'bv') cleanCode = 'no'; // Bouvetinsel -> Norwegen
-          if (cleanCode === 'hm') cleanCode = 'au'; // Heard und McDonald -> Australien
-
-          return {
-              _id: country._id,
-              code: cleanCode
-          };
-      });
+      const formatedCountries = countryData.map(country => this.#mapCountryRow(country));
 
       /* Cache anlegen (Gesamtes Array als eine JSON-Zeile) */
-      localStorage.setItem(countryCacheKey, JSON.stringify({ data: formatedCountries, timestamp: now }));
+      this.#setCacheData('COUNTRY', null, formatedCountries);
       return formatedCountries;
   }
 
   async #getCountries(countryId = null) {
-      const now = Date.now();
-      const countryCacheKey = `countries_cache_all`;
-      const cached = localStorage.getItem(countryCacheKey);
-      let allCountries = [];
+    let allCountries = this.#getCacheData('COUNTRY', null) || [];
 
-
-      if (cached && !this.forceUpdate) {
-          try {
-              const { data, timestamp } = JSON.parse(cached);
-              if (now - timestamp < this.COUNTRY_CACHE) {
-                  allCountries = data; 
-              }
-          } catch (e) {
-              console.error("Country Cache Parse Fehler:", e);
-          }
-      }
 
       if (allCountries.length === 0) {
         if (!this.laufendeCountryRequest) {
-            this.laufendeCountryRequest = this.#setCountryCache(countryCacheKey).then(data => {
+            this.laufendeCountryRequest = this.#setCountryCache().then(data => {
                 this.laufendeCountryRequest = null; // Zurücksetzen wenn fertig
                 return data;
             });
@@ -159,38 +229,16 @@ export class DataHandler {
     MU Funktionen
     ========================================================================== */
 
-    async #setMUCache(MU_ID, muCacheKey) {
+    async #setMUCache(MU_ID) {
     
-        const now = Date.now();
         const response = await this.client.mu.getById({ muId : MU_ID });
         const muData = response?.result?.data || response;
 
 
-        const formatedMU = {
+        const formatedMU = this.#mapMUData(muData);
 
-            _id: muData._id,
-            avatarUrl: muData.avatarUrl,
-            name: muData.name,
-            managers: muData.roles?.managers,
-            commanders: muData.roles?.commanders,
-            members: muData.members,
-            activeUpgradeLevels: {
-                "headquarters": muData.activeUpgradeLevels?.headquarters || 0,
-                "dormitories" : muData.activeUpgradeLevels?.dormitories  || 0,
-            },
-            rankings: {
-                "muWeeklyDamages"   : muData.rankings?.muWeeklyDamages?.value,
-                "muBounty"          : muData.rankings?.muBounty?.value,       
-                "muReputation"      : muData.rankings?.muReputation?.value,
-                "muDamages"         : muData.rankings?.muDamages?.value,
-                "muTerrain"         : muData.rankings?.muTerrain?.value,
-                "muWealth"          : muData.rankings?.muWealth?.value,
-            },
-        };
-
-        /* Cache anlegen*/
-        localStorage.setItem(muCacheKey, JSON.stringify({ data: formatedMU, timestamp: now }));
-        return formatedMU
+        this.#setCacheData('MU', MU_ID, formatedMU);
+        return formatedMU;
     }
 
     #parseMUFromArticle(articleData){
@@ -231,7 +279,6 @@ export class DataHandler {
 
         const apiTasks = []; 
         const finalResults = []; 
-        const now = Date.now();
       
         // Map, um bereits erstellte API-Promises für IDs zu merken
         const laufendeApiRequests = new Map();
@@ -240,27 +287,15 @@ export class DataHandler {
           gruppe.ids.forEach(id => {
 
 
+            const cachedData = this.#getCacheData('MU', id);
 
-            const cacheKey = `mu_cache_${id}`;
-            const cached = localStorage.getItem(cacheKey);
-
-
-      
-            // A) Cache-Prüfung (Duplikate aus dem Cache sind kein Problem)
-            if (cached && !this.forceUpdate) {
-              try {
-                const { data, timestamp } = JSON.parse(cached);
-                if (now - timestamp < this.MU_CACHE) {
-                  finalResults.push({
+            if (cachedData) {
+                finalResults.push({
                     spaltenName: gruppe.category,
                     id: id,
-                    objekt: data
-                  });
-                  return; 
-                }
-              } catch (e) {
-                console.error("Cache Parse Fehler:", e);
-              }
+                    objekt: cachedData
+                });
+                return; 
             }
       
             // B) Duplikat-Schutz für Netzwerk-Anfragen:
@@ -286,7 +321,7 @@ export class DataHandler {
             const fetchTask = (async () => {
               try {
       
-                return await this.#setMUCache( id, cacheKey)
+                return await this.#setMUCache( id)
               
               } catch (error) {
                 console.error(`Fehler bei ID ${id}:`, error);
@@ -326,36 +361,35 @@ export class DataHandler {
 
       //################ Falls Custom Layout Existiert ##################
 
-      const customCacheKey = `custom_layout_${this.currentArticleId}`;
-        const customLayoutRaw = localStorage.getItem(customCacheKey);
+      const customLayout = this.#getCacheData('LAYOUT', this.currentArticleId);
 
-        // Am Anfang und bei normalem Laden: Wenn ein Custom-Layout existiert, nutze es!
-        if (customLayoutRaw) {
-            try {
-                const { spalten } = JSON.parse(customLayoutRaw);
-                console.log("Custom-Layout im Speicher gefunden. Lade modifizierte Struktur...");
-                
-                const MUs = await this.#getMU(spalten);
-                this.setForceUpdate();
-                return MUs;
-            } catch (e) {
-                console.error("Fehler beim Parsen des Custom-Layouts, weiche auf API aus:", e);
-            }
-        }
+      // Am Anfang und bei normalem Laden: Wenn ein Custom-Layout existiert, nutze es!
+      if (customLayout && customLayout.spalten) {
+          try { 
 
+            console.log("Custom-Layout im Speicher gefunden. Lade modifizierte Struktur...");
+            const MUs = await this.#getMU(customLayout.spalten);
+            this.setForceUpdate()
+            return MUs;
+
+          } catch (e) {
+              console.error("Fehler beim Parsen des Custom-Layouts, weiche auf API aus:", e);
+          }
+      }
 
 
-        const articleData = await this.#getArticle();
 
-        /*#################    Parser   ####################*/
-    
-        const geparsteGruppen = this.#parseMUFromArticle(articleData);
+      const articleData = await this.#getArticle();
 
-        /*#################    Strucktur mit Division (gruppe ), Muid und Mu-daten (bzw MU objekt bauen)  ####################*/
-        
-        const MUs = await this.#getMU (geparsteGruppen);
-        this.setForceUpdate()
-        return MUs
+      /*#################    Parser   ####################*/
+  
+      const geparsteGruppen = this.#parseMUFromArticle(articleData);
+
+      /*#################    Strucktur mit Division (gruppe ), Muid und Mu-daten (bzw MU objekt bauen)  ####################*/
+      
+      const MUs = await this.#getMU (geparsteGruppen);
+      this.setForceUpdate()
+      return MUs
     }   
 
 
@@ -367,9 +401,8 @@ export class DataHandler {
     ========================================================================== */
 
 
-    async #setUserCache(USER_ID, userCacheKey) {
+    async #setUserCache(USER_ID) {
     
-      const now = Date.now();
       const response = await this.client.user.getUserLite({ userId : USER_ID });
       const userData = response?.result?.data || response;
 
@@ -377,20 +410,11 @@ export class DataHandler {
       const countryObj = await this.#getCountries(userData.country);
       const flagCode = countryObj ? countryObj.code : "";
 
-      const formatedUser = {
-
-          _id: userData._id,
-          avatarUrl: userData.avatarUrl,
-          username: userData.username,
-          country: flagCode,
-          level: userData.leveling?.level,
-          isActive: userData.isActive,
-          weeklyUserDamages: userData.rankings?.weeklyUserDamages?.value,
-      }
+      const formatedUser = this.#mapUserData(userData, flagCode);
          
 
       /* Cache anlegen*/
-      localStorage.setItem(userCacheKey, JSON.stringify({ data: formatedUser, timestamp: now }));
+      this.#setCacheData('USER', USER_ID, formatedUser);
       return formatedUser
   }
 
@@ -398,7 +422,6 @@ export class DataHandler {
   async #getUser(userIds = []) {
     const apiTasks = []; 
     const finalResults = []; 
-    const now = Date.now();
     const laufendeApiRequests = new Map();
 
     // Wir gehen durch jede übergebene User-ID
@@ -407,24 +430,12 @@ export class DataHandler {
       const cleanId = typeof id === 'object' ? (id._id || id.id) : id;
       if (!cleanId) return;
 
-      const userCacheKey = `user_cache_${cleanId}`;
-      const cached = localStorage.getItem(userCacheKey);
+      const cachedData = this.#getCacheData('USER', cleanId);
 
-      // A) Cache-Prüfung (sofern kein forceUpdate erzwungen wird)
-      if (cached && !this.forceUpdate) {
-        try {
-          const { data, timestamp } = JSON.parse(cached);
-          // Nutzt die für User definierte Cache-Zeit (z.B. USER_CACHE, falls vorhanden, sonst 1 Std)
-          const cacheDauer = this.USER_CACHE || 3600000; 
-
-          if (now - timestamp < cacheDauer) {
-            finalResults.push(data); // Drückt das formatierte User-Objekt direkt ins Ergebnis
-            return; 
-          }
-        } catch (e) {
-          console.error("User Cache Parse Fehler:", e);
-        }
-      }
+      if (cachedData) {
+        finalResults.push(cachedData);
+        return; 
+    }
 
       // B) Duplikat-Schutz für laufende Netzwerk-Anfragen:
       // Wurde für diese User-ID im aktuellen Schleifendurchlauf schon ein API-Task erstellt?
@@ -442,7 +453,7 @@ export class DataHandler {
       const fetchTask = (async () => {
         try {
           // Ruft deine bestehende Methode auf, die formatedUser generiert und speichert
-          return await this.#setUserCache(cleanId, userCacheKey);
+          return await this.#setUserCache(cleanId);
         } catch (error) {
           console.error(`Fehler bei User-ID ${cleanId}:`, error);
           // Fallback-Objekt, damit die App nicht abstürzt, wenn ein User-Fetch fehlschlägt
@@ -495,10 +506,9 @@ export class DataHandler {
     };
 
     // 1. IDs extrahieren und strikt zu Strings konvertieren
-    const rawManagers = muObjekt.managers || [];
-    const managerIds = (Array.isArray(rawManagers) ? rawManagers : [rawManagers]).map(extrahiereId).filter(Boolean);
-    const commanderIds = (muObjekt.commanders || []).map(extrahiereId).filter(Boolean);
-    const memberIds = (muObjekt.members || []).map(extrahiereId).filter(Boolean);
+    const managerIds = (Array.isArray(muObjekt.managers) ? muObjekt.managers : [muObjekt.managers || []]).flatMap(item => item ? [extrahiereId(item)] : []).filter(Boolean);
+    const commanderIds = (Array.isArray(muObjekt.commanders) ? muObjekt.commanders : [muObjekt.commanders || []]).flatMap(item => item ? [extrahiereId(item)] : []).filter(Boolean);
+    const memberIds = (Array.isArray(muObjekt.members) ? muObjekt.members : [muObjekt.members || []]).flatMap(item => item ? [extrahiereId(item)] : []).filter(Boolean);
 
     await this.#getCountries();
 
@@ -588,36 +598,32 @@ export class DataHandler {
 
 
 
-    /**
-     * Erzeugt den exakten Code für den WarEra-Artikel im gewünschten Format.
-     * @param {Array} spalten - Der Spalten-State aus dem MuEditor
-     * @returns {string} Generierter HTML/Markdown-Code für den Export
-     */
-    exportSpaltenToHtml(spalten = []) {
-      let html = "";
-      spalten.forEach((spalte, index) => {
-          if (!spalte.ids || spalte.ids.length === 0) return;
-          
-          // Füge einen Zeilenumbruch vor der nächsten Gruppe ein, falls es nicht die erste ist
-          if (index > 0) html += "\n";
-          
-          html += `## ${spalte.category}\n\n`;
+  /**
+   * Erzeugt den exakten Code für den WarEra-Artikel im gewünschten Format.
+   * @param {Array} spalten - Der Spalten-State aus dem MuEditor
+   * @returns {string} Generierter HTML/Markdown-Code für den Export
+   */
+  exportSpaltenToHtml(spalten = []) {
+    let html = "";
+    spalten.forEach((spalte, index) => {
+        if (!spalte.ids || spalte.ids.length === 0) return;
+        
+        // Füge einen Zeilenumbruch vor der nächsten Gruppe ein, falls es nicht die erste ist
+        if (index > 0) html += "\n";
+        
+        html += `## ${spalte.category}\n\n`;
 
-          
-          
-          spalte.ids.forEach(id => {
-              html += "\\\n";
-              html += `<span data-content-link="" data-content-type="mu" data-content-data="{&quot;muId&quot;:&quot;${id}&quot;,&quot;fullMatch&quot;:&quot;https://app.warera.io/mu/${id}&quot;}" data-original-text="https://app.warera.io/mu/${id}"></span>`;
-          });
-      });
-      return html;
+        
+        
+        spalte.ids.forEach(id => {
+            html += "\\\n";
+            html += `<span data-content-link="" data-content-type="mu" data-content-data="{&quot;muId&quot;:&quot;${id}&quot;,&quot;fullMatch&quot;:&quot;https://app.warera.io/mu/${id}&quot;}" data-original-text="https://app.warera.io/mu/${id}"></span>`;
+        });
+    });
+    return html;
   }
 
-  /**
-   * Parst ein manuell reinkopiertes Text-Format (inklusive Backslashes) direkt.
-   * @param {string} htmlText - Reinkopierter String aus dem Artikel
-   * @returns {Array} Formatierte Gruppen für den Editor-State
-   */
+ 
   /**
    * ANGEPASST: Nutzt jetzt exklusiv den neuen Markdown-Parser für das manuelle UI-Feld
    * @param {string} htmlText - Reinkopierter Text aus dem Artikel
@@ -631,12 +637,12 @@ export class DataHandler {
 
 
   /**
-     * Lädt Details für ein Array von MU-IDs parallel nach.
-     * Nutzt im Hintergrund die caching- und duplikatsichere Methode #getMU.
-     * Kann auch für einzelne IDs genutzt werden (z.B. [muId]).
-     * @param {Array<string>} muIds - Array aus 24-stelligen Hex-IDs
-     * @returns {Promise<Map<string, object>>} Eine Map mit id -> formatierte MU-Objektdaten
-     */
+   * Lädt Details für ein Array von MU-IDs parallel nach.
+   * Nutzt im Hintergrund die caching- und duplikatsichere Methode #getMU.
+   * Kann auch für einzelne IDs genutzt werden (z.B. [muId]).
+   * @param {Array<string>} muIds - Array aus 24-stelligen Hex-IDs
+   * @returns {Promise<Map<string, object>>} Eine Map mit id -> formatierte MU-Objektdaten
+   */
   async getMultipleMusByIds(muIds = []) {
     const bereinigteIds = [...new Set(muIds.filter(Boolean))]; // Duplikate direkt filtern
     if (bereinigteIds.length === 0) return new Map();
@@ -673,16 +679,12 @@ export class DataHandler {
      * @param {Array} spalten - Die Struktur aus dem Editor
      */
     saveCustomLayout(spalten = []) {
-      const cacheKey = `custom_layout_${this.currentArticleId}`;
       if (!spalten || spalten.length === 0) {
-          localStorage.removeItem(cacheKey);
+          localStorage.removeItem(this.#getCacheKey('LAYOUT', this.currentArticleId));
           console.log("Custom-Layout wurde gelöscht. Artikel-Standard ist wieder aktiv.");
           return;
       }
-      localStorage.setItem(cacheKey, JSON.stringify({
-          spalten,
-          timestamp: Date.now()
-      }));
+      this.#setCacheData('LAYOUT', this.currentArticleId, { spalten });
       console.log("Custom-Layout erfolgreich lokal gespeichert.");
     }
 

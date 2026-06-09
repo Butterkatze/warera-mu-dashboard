@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import './mueditor.css';
 
-export default function MuEditor({ muData = [], onCancel, dataHandler, onRefresh }) {
-  
+//export default function MuEditor({ muData = [], onCancel, dataHandler, onRefresh }) {
+export default function MuEditor({ muData = [], dataHandler, onRefresh }) { 
   const [spalten, setSpalten] = useState(() => {
     if (muData && muData.length > 0) {
       const map = new Map();
@@ -342,9 +342,11 @@ export default function MuEditor({ muData = [], onCancel, dataHandler, onRefresh
           </span>
         )}
 
+        {/*
         <button type="button" className="btn-editor-secondary small" onClick={onCancel}>
           Editor Schließen
         </button>
+        */}
 
         <button type="button" className="btn-editor-danger small" onClick={handleResetLayout}>
           Eigenes Layout löschen

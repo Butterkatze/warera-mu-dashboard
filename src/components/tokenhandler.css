@@ -8,7 +8,7 @@
     left: 0;
     width: 100vw;
     height: 100vh;
-    background-color: rgba(17, 20, 29, 0.85); /* Dunkler, transparenter Backdrop */
+    background-color: var(--color-modal-backdrop);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -16,14 +16,14 @@
   }
   
   .modal-container {
-    background-color: #1a1f2c;
-    border: 1px solid #2d3748;
+    background-color: var(--color-bg-main);
+    border: 1px solid var(--color-border);
     border-radius: 8px;
     padding: 25px;
     width: 100%;
     max-width: 480px;
-    color: #fff;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    color: var(--color-text-primary);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5); /* Schatten bleibt zwecks Plastizität dunkel */
     box-sizing: border-box;
   }
   
@@ -31,13 +31,13 @@
     margin: 0 0 10px 0;
     font-size: 20px;
     font-weight: 600;
-    color: #fff;
+    color: var(--color-text-primary);
   }
   
   .modal-subtitle {
     margin: 0 0 20px 0;
     font-size: 14px;
-    color: #a0aec0;
+    color: var(--color-text-secondary);
     line-height: 1.5;
   }
   
@@ -57,16 +57,16 @@
   .input-label {
     font-size: 11px;
     font-weight: bold;
-    color: #718096;
+    color: var(--color-text-input-label);
     letter-spacing: 0.05em;
   }
   
   .token-input {
     width: 100%;
-    background-color: #11141d;
-    border: 1px solid #2d3748;
+    background-color: var(--color-input-bg);
+    border: 1px solid var(--color-border);
     border-radius: 4px;
-    color: #fff;
+    color: var(--color-text-primary);
     padding: 10px 12px;
     font-size: 14px;
     outline: none;
@@ -75,7 +75,7 @@
   }
   
   .token-input:focus {
-    border-color: #00ffcc;
+    border-color: var(--color-accent-cyan);
   }
   
   .token-input:disabled {
@@ -85,8 +85,8 @@
   
   /* Fehlerzustand für das Input-Feld */
   .token-input.input-error {
-    border-color: #ef4444 !important;
-    background-color: rgba(239, 68, 68, 0.02);
+    border-color: var(--color-error) !important;
+    background-color: var(--color-error-bg);
   }
   
   /* Erweiterte Optionen (Advanced) Toggle */
@@ -98,7 +98,7 @@
   .advanced-toggle-btn {
     background: none;
     border: none;
-    color: #a0aec0;
+    color: var(--color-text-secondary);
     font-size: 13px;
     cursor: pointer;
     padding: 0;
@@ -108,7 +108,7 @@
   }
   
   .advanced-toggle-btn:hover {
-    color: #00ffcc;
+    color: var(--color-accent-cyan);
   }
   
   /* Advanced Input mit Reset-Button */
@@ -126,9 +126,9 @@
     flex: none;
     width: 38px;
     height: 38px;
-    background-color: #161b26;
-    border: 1px solid #2d3748;
-    color: #a0aec0;
+    background-color: var(--color-bg-reset-btn);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-secondary);
     border-radius: 4px;
     display: flex;
     align-items: center;
@@ -139,9 +139,9 @@
   }
   
   .btn-reset-round:hover:not(:disabled) {
-    color: #00ffcc;
-    border-color: #00ffcc;
-    background-color: #1e2636;
+    color: var(--color-accent-cyan);
+    border-color: var(--color-accent-cyan);
+    background-color: var(--color-bg-reset-btn-hover);
   }
   
   .btn-reset-round:disabled {
@@ -160,18 +160,18 @@
   }
   
   .status-message-box.error {
-    background-color: rgba(239, 68, 68, 0.1);
-    border: 1px solid rgba(239, 68, 68, 0.2);
+    background-color: var(--color-error-bg);
+    border: 1px solid var(--color-error-border);
   }
   
   .status-message-box.loading {
-    background-color: rgba(160, 174, 192, 0.1);
-    border: 1px solid rgba(160, 174, 192, 0.2);
+    background-color: var(--color-loading-bg);
+    border: 1px solid var(--color-loading-border);
   }
   
   .status-message-box.success {
-    background-color: rgba(46, 204, 113, 0.1);
-    border: 1px solid rgba(46, 204, 113, 0.2);
+    background-color: var(--color-success-bg-modal);
+    border: 1px solid var(--color-success-border-modal);
   }
   
   .status-badge {
@@ -179,13 +179,13 @@
     font-weight: bold;
   }
   
-  .error .status-badge { color: #ef4444; }
-  .loading .status-badge { color: #a0aec0; }
-  .success .status-badge { color: #2ecc71; }
+  .error .status-badge { color: var(--color-error); }
+  .loading .status-badge { color: var(--color-loading); }
+  .success .status-badge { color: var(--color-success-badge); }
   
   .status-text {
     margin: 0;
-    color: #e2e8f0;
+    color: var(--color-text-primary);
   }
   
   /* Button-Gruppe im Modal */
@@ -207,8 +207,8 @@
   }
   
   .button-group .btn-primary {
-    background-color: #00ffcc;
-    color: #11141d;
+    background-color: var(--color-accent-cyan);
+    color: var(--color-input-bg);
   }
   
   .button-group .btn-primary:hover:not(:disabled) {
@@ -217,14 +217,14 @@
   
   .button-group .btn-secondary {
     background-color: transparent;
-    color: #a0aec0;
-    border: 1px solid #4a5568;
+    color: var(--color-text-secondary);
+    border: 1px solid var(--color-border);
   }
   
   .button-group .btn-secondary:hover:not(:disabled) {
-    color: #fff;
-    border-color: #718096;
-    background-color: rgba(255, 255, 255, 0.02);
+    color: var(--color-text-primary);
+    border-color: var(--color-text-secondary);
+    background-color: var(--color-bg-clickable-hover);
   }
   
   .button-group .btn:disabled {
