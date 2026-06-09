@@ -50,6 +50,9 @@
     --color-success-badge: #2ecc71;
     --color-success-bg-modal: rgba(46, 204, 113, 0.1);
     --color-success-border-modal: rgba(46, 204, 113, 0.2);
+
+    /* Userliste Mu dashborard*/
+    --color-table-divider: #3f4f66;
 }
 
 body {

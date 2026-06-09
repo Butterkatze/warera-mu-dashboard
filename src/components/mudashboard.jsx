@@ -147,9 +147,21 @@ function MuUserList({ members = [], muUsers = [], isLoadingUsers = false }) {
   });
 
   // Helper, um den aktiven Sortier-Pfeil im Header anzuzeigen
-  const getClassNamesFor = (name) => {
-    if (sortConfig.key !== name) return '';
-    return sortConfig.direction === 'asc' ? ' ▲' : ' ▼';
+  const renderSortArrow = (name) => {
+    // Ist das die aktuell sortierte Spalte?
+    const isActive = sortConfig.key === name;
+    // Wenn aktiv, nimm die echte Richtung, sonst Standard 'desc' für den Platzhalter
+    const arrow = isActive && sortConfig.direction === 'asc' ? '▲' : '▼';
+  
+    return (
+      <span style={{ 
+        visibility: isActive ? 'visible' : 'hidden', 
+        marginLeft: '6px',
+        display: 'inline-block' 
+      }}>
+        {arrow}
+      </span>
+    );
   };
 
   return (
@@ -165,18 +177,17 @@ function MuUserList({ members = [], muUsers = [], isLoadingUsers = false }) {
           <table className="mu-user-table">
             <thead>
               <tr>
-                {/* CSS-Tipp: Füge der Klasse '.sortable-header' im CSS 'cursor: pointer' hinzu */}
                 <th onClick={() => requestSort('name')} className="sortable-header">
-                  Name / ID{getClassNamesFor('name')}
+                  Name / ID {renderSortArrow('name')}
                 </th>
                 <th onClick={() => requestSort('damage')} className="sortable-header">
-                  Weekly Damage{getClassNamesFor('damage')}
+                  Weekly Damage {renderSortArrow('damage')}
                 </th>
                 <th onClick={() => requestSort('level')} className="sortable-header">
-                  Userlevel{getClassNamesFor('level')}
+                  Userlevel {renderSortArrow('level')}
                 </th>
                 <th onClick={() => requestSort('active')} className="sortable-header">
-                  Aktiver Bürger{getClassNamesFor('active')}
+                  Aktiver Bürger {renderSortArrow('active')}
                 </th>
               </tr>
             </thead>
@@ -289,7 +300,7 @@ function MuDashboard({ selectedMu = null, dataHandler }) {
     <div className="mu-dashboard-wrapper">
       <div className="mu-dashboard-header">
         {muData.avatarUrl && <img src={muData.avatarUrl} alt={muData.name} className="mu-dashboard-avatar" />}
-        <h2>{muData.name} ÜBERBLICK</h2>
+        <h2>{muData.name} Überblick</h2>
       </div>
 
       {/* Oberer Bereich: Nebeneinander aufgeteilt */}
