@@ -1,4 +1,4 @@
-# WarEra Dashboard & Editor für oofizielle deutsche MUs
+# WarEra Dashboard & Editor für offizielle deutsche MUs
 
 Ein clientseitiges Dashboard mit integriertem Struktur-Editor für **[WarEra](https://app.warera.io/)**. Das Tool ermöglicht es, Militäreinheiten (MUs) aus Artikeln auszulesen, deren Live-Daten über die WarEra-API zu aggregieren und benutzerdefinierte Layouts zu verwalten.
 

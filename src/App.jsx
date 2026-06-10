@@ -12,38 +12,14 @@ const DEFAULT_ARTICLE_ID = '6a1f025b37df43a8d01bb9a2';
 
 
 function App() {
-
-  const [articleId, setArticleId] = useState(() => {
-    try {
-      return localStorage.getItem("warera_article_id") || DEFAULT_ARTICLE_ID;
-    } catch {
-      return DEFAULT_ARTICLE_ID;
-    }
-  });
-  
-  const [apiKey, setApiKey] = useState(() => {
-        try {
-          return localStorage.getItem("warera_api_key") || FAKE_KEY;
-        } catch {
-          return FAKE_KEY;
-        }
-      });
-  
   const dataHandler = useMemo(() => new DataHandler(DEFAULT_ARTICLE_ID), []);
 
-  useEffect(() => {
-    if (dataHandler && typeof dataHandler.setArticleId === 'function') {
-      dataHandler.setArticleId(articleId);
-    }
-  }, [articleId, dataHandler]);
+  const [showTokenPopup, setShowTokenPopup] = useState(dataHandler.apiKey === FAKE_KEY);
+  
 
-  const [showTokenPopup, setShowTokenPopup] = useState(apiKey === FAKE_KEY);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-
   const [selectedMu, setSelectedMu] = useState(null);
-
-
   const [muData, setMuData] = useState([]); 
 
 /* ==========================================================================
@@ -51,8 +27,6 @@ function App() {
     ========================================================================== */
 
   useEffect(() => {
-    // Wenn die Seite frisch lädt und der Browser noch einen alten Dashboard-State im Speicher hat,
-    // überschreiben wir diesen sofort, damit beim "Zurück"-Klicken nichts hängenbleibt.
     if (window.history.state?.view === 'dashboard') {
       window.history.replaceState(null, '');
     }
@@ -104,19 +78,19 @@ function App() {
     Basic Fake Funktions
     ========================================================================== */
 
-  const handleLoadData = async (targetId, forceUpdate = false) => {
+  const handleLoadData = async (forceUpdate = false) => {
+    const targetId = dataHandler.currentArticleId;
     if (!targetId) return;
+
     setIsLoading(true);
     try {
       console.log("Event-gesteuertes Laden über globale Instanz für ID:", targetId);
       
       // Zustand der bestehenden Instanz updaten statt "new DataHandler()"
       dataHandler.setForceUpdate(forceUpdate)
-      dataHandler.setArticleId(targetId);
-      
-
       const data = await dataHandler.getMUFromArticle();
       setMuData(data);
+
     } catch (error) {
       console.error("Fehler beim Laden:", error);
     } finally {
@@ -130,13 +104,13 @@ function App() {
   const [hasCheckedInitialData, setHasCheckedInitialData] = useState(false);
   if (!showTokenPopup && !hasCheckedInitialData) {
     setHasCheckedInitialData(true);
-    handleLoadData(articleId);
+    handleLoadData();
   }
 
   // Hilfsfunktion für den Start nach dem ersten erfolgreichen Login
   const closePopup = () => {
     setShowTokenPopup(false);
-    handleLoadData(articleId);
+    handleLoadData();
   };
 
 
@@ -147,10 +121,8 @@ function App() {
     <>
       {showTokenPopup && (
         <Tokenhandler 
-          setApiKey={setApiKey} 
           DEFAULT_ARTICLE_ID = {DEFAULT_ARTICLE_ID}
-          setArticleId ={setArticleId}
-          onRefresh={(newId) => handleLoadData(newId)}
+          onRefresh={() => handleLoadData()}
           onClose={() => {
             closePopup();
           }}
@@ -183,7 +155,7 @@ function App() {
             <button 
               className="btn-header btn-header-refresh"
               disabled={isLoading}
-              onClick={() => handleLoadData(articleId, true)}
+              onClick={() => handleLoadData(true)}
             >
               {isLoading ? "Lädt..." : "Aktualisieren"}
             </button>
@@ -200,7 +172,7 @@ function App() {
           muData={muData} 
           onCancel={() => setIsEditorOpen(false)} 
           dataHandler={dataHandler}
-          onRefresh={() => handleLoadData(articleId)}
+          onRefresh={() => handleLoadData()}
         />
       ) : selectedMu ? (
       <div className="dashboard-view-container">

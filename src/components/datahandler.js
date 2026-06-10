@@ -66,7 +66,21 @@ class BaseSubHandler {
         }
     }
 
+    //===============================================
+    // Mapper Helpers
+
+    calculateTotalSkillPoints(level) {
+        
+        if (!level || level <= 0) return 0;
+        
+        return (level * (level + 1)) / 2;
+    }
+
+
+
+    //============================================
     // CENTRALIZED FORMATTERS (MAPPERS)
+
     mapArticleData(apiData) {
         return { _id: apiData._id, content: apiData.content || "" };
     }
@@ -104,6 +118,37 @@ class BaseSubHandler {
     }
 
     mapUserData(apiData, calculatedFlagCode = "") {
+        const basepath = apiData.skills;
+        let skillpath = '';
+        if (basepath) {
+            const warSkillPathPoints =      this.calculateTotalSkillPoints(basepath.attack?.level) +  
+                                            this.calculateTotalSkillPoints(basepath.precision?.level) + 
+                                            this.calculateTotalSkillPoints(basepath.criticalChance?.level) +
+                                            this.calculateTotalSkillPoints(basepath.criticalDamages?.level) + 
+                                            this.calculateTotalSkillPoints(basepath.armor?.level) +
+                                            this.calculateTotalSkillPoints(basepath.dodge?.level) + 
+                                            this.calculateTotalSkillPoints(basepath.health?.level) +
+                                            this.calculateTotalSkillPoints(basepath.lootChance?.level) +
+                                            this.calculateTotalSkillPoints(basepath.hunger?.level);
+
+            const ecoSkillPathPoints =      this.calculateTotalSkillPoints(basepath.energy?.level) + 
+                                            this.calculateTotalSkillPoints(basepath.companies?.level) +
+                                            this.calculateTotalSkillPoints(basepath.entrepreneurship?.level) + 
+                                            this.calculateTotalSkillPoints(basepath.production?.level) +
+                                            this.calculateTotalSkillPoints(basepath.management?.level);
+                                            
+            const userLevel = apiData.leveling?.level || 0;
+            
+            if (userLevel > 20) {   //Wenn unter Level 20 = Aufbau
+                if (warSkillPathPoints > ecoSkillPathPoints) {
+                    skillpath = 'War';
+                } else if (ecoSkillPathPoints > warSkillPathPoints) {
+                    skillpath = 'Eco';
+                }
+            }else{
+                skillpath = 'Aufbau';
+            }
+        }
         return {
             _id: apiData._id,
             avatarUrl: apiData.avatarUrl,
@@ -113,6 +158,14 @@ class BaseSubHandler {
             lastConnectionAt: apiData.dates?.lastConnectionAt,
             isActive: apiData.isActive,
             weeklyUserDamages: apiData.rankings?.weeklyUserDamages?.value,
+            skillpath: skillpath || 'Fehler',
+            buffs:{
+                "buffCodes": apiData.buffs?.buffCodes || [],
+                "buffEndAt": apiData.buffs?.buffEndAt || null,
+                "debuffCodes": apiData.buffs?.debuffCodes || [],
+                "debuffEndAt": apiData.buffs?.debuffEndAt || null,
+            },
+            
         };
     }
 }
@@ -383,7 +436,7 @@ class UserHandler extends BaseSubHandler {
     }
 
     async #fetchAndCacheUser(USER_ID) {
-        const response = await this.parent.client.user.getUserLite({ userId : USER_ID });
+        const response = await this.parent.client.user.getUserById({ userId : USER_ID });
         const userData = response?.result?.data || response;
 
         const countryObj = await this.parent.countries.getInternalCountries(userData.country);
@@ -510,17 +563,88 @@ class LayoutHandler extends BaseSubHandler {
 // CENTRAL DATA HANDLER (Der Orchestrator / Einstiegspunkt für React)
 // ==========================================================================
 export class DataHandler {
-    constructor(initialArticleId = '', forceUpdate = false) {
-        this.client = getWarEraClient();
-        this._forceUpdate = forceUpdate;
-        this.currentArticleId = initialArticleId; 
+    constructor(defaultArticleId = '', forceUpdate = false) {
 
+        this._forceUpdate = forceUpdate;
+        this.DEFAULT_ARTICLE_ID = defaultArticleId;
+
+        // Initiale Werte sicher laden
+        this._apiKey = this._safeGetLocalStorage('warera_api_key', '');
+        this._currentArticleId = this._safeGetLocalStorage('warera_article_id', defaultArticleId) || defaultArticleId;
+
+        // API-Client initialisieren
+        this.client = getWarEraClient();
+
+        // Sub-Handler registrieren
         this.articles = new ArticleHandler(this);
         this.countries = new CountryHandler(this);
         this.mus = new MuHandler(this);
         this.users = new UserHandler(this);
         this.layout = new LayoutHandler(this);
     }
+
+    // ==========================================
+    // GETTER (Öffentlicher Lesezugriff)
+    // ==========================================
+    get apiKey() {
+        return this._apiKey;
+    }
+
+    get currentArticleId() {
+        return this._currentArticleId;
+    }
+
+    // ==========================================
+    // SEPARATE SPEICHER- & LÖSCHMETHODEN
+    // ==========================================
+    
+    // API-Key einzeln verwalten
+    saveApiKey(newKey) {
+        try {
+            const finalKey = newKey.trim();
+            localStorage.setItem('warera_api_key', finalKey);
+            this._apiKey = finalKey;
+            this.updateClient(); // Client neu bauen, da sich die Rechte geändert haben
+        } catch (error) {
+            console.error("Fehler beim Speichern des API-Keys:", error);
+            throw error;
+        }
+    }
+
+    clearApiKey() {
+        try {
+            localStorage.removeItem('warera_api_key');
+            this._apiKey = '';
+            this.updateClient();
+        } catch (error) {
+            console.error("Fehler beim Löschen des API-Keys:", error);
+        }
+    }
+
+    // Article-ID einzeln verwalten
+    saveArticleId(newArticleId) {
+        try {
+            const finalId = newArticleId.trim() || this.DEFAULT_ARTICLE_ID;
+            localStorage.setItem('warera_article_id', finalId);
+            this._currentArticleId = finalId;
+        } catch (error) {
+            console.error("Fehler beim Speichern der Article-ID:", error);
+            throw error;
+        }
+    }
+
+    clearArticleId() {
+        try {
+            localStorage.removeItem('warera_article_id');
+            this._currentArticleId = this.DEFAULT_ARTICLE_ID;
+        } catch (error) {
+            console.error("Fehler beim Zurücksetzen der Article-ID:", error);
+        }
+    }
+
+    // ==========================================
+    // INTERNE HILFSMETHODEN & LEGACY-SETTER
+    // ==========================================
 
     get forceUpdate() {
         return this._forceUpdate;
