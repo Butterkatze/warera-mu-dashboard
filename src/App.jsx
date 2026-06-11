@@ -78,32 +78,32 @@ function App() {
     Basic Fake Funktions
     ========================================================================== */
 
-  const handleLoadData = async (forceUpdate = false) => {
-    const targetId = dataHandler.currentArticleId;
-    if (!targetId) return;
-
-    setIsLoading(true);
-    try {
-      console.log("Event-gesteuertes Laden über globale Instanz für ID:", targetId);
-      
-      // Zustand der bestehenden Instanz updaten statt "new DataHandler()"
-      dataHandler.setForceUpdate(forceUpdate)
-      const data = await dataHandler.getMUFromArticle();
-      setMuData(data);
-
-    } catch (error) {
-      console.error("Fehler beim Laden:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+    const handleLoadData = async (forceUpdate = false) => {
+      const targetId = dataHandler.currentArticleId;
+      if (!targetId) return;
+    
+      setIsLoading(true);
+      try {
+        console.log("Event-gesteuertes Laden für ID:", targetId);
+        dataHandler.setForceUpdate(forceUpdate); 
+        
+        const data = await dataHandler.getMUFromArticle();
+        setMuData(data);
+      } catch (error) {
+        console.error("Fehler beim Laden:", error);
+      } finally {
+        dataHandler.setForceUpdate(false); 
+        setIsLoading(false);
+      }
+    };
 
   
 
   const [hasCheckedInitialData, setHasCheckedInitialData] = useState(false);
   if (!showTokenPopup && !hasCheckedInitialData) {
     setHasCheckedInitialData(true);
+    
+    dataHandler.validateAndCleanCache(); // Filtert tote Caches direkt vor dem ersten Render-Lauf
     handleLoadData();
   }
 

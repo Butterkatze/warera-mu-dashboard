@@ -21,7 +21,7 @@ class BaseSubHandler {
         const CONFIG = {
             ARTICLE: { prefix: 'article_cache', duration: 5 * 60 * 1000 },
             MU:      { prefix: 'mu_cache',      duration: 15 * 60 * 1000 },
-            USER:    { prefix: 'user_cache',    duration: 15 * 60 * 1000 },
+            USER:    { prefix: 'user_cache',    duration: 5 * 60 * 1000 },
             COUNTRY: { prefix: 'countries_cache', duration: 24 * 60 * 60 * 1000 },
             LAYOUT:  { prefix: 'custom_layout', duration: Infinity }
         };
@@ -136,14 +136,18 @@ class BaseSubHandler {
                                             this.calculateTotalSkillPoints(basepath.entrepreneurship?.level) + 
                                             this.calculateTotalSkillPoints(basepath.production?.level) +
                                             this.calculateTotalSkillPoints(basepath.management?.level);
+
+            const totalSkillPathPoints = ecoSkillPathPoints + warSkillPathPoints;
                                             
             const userLevel = apiData.leveling?.level || 0;
             
             if (userLevel > 20) { 
-                if (warSkillPathPoints > ecoSkillPathPoints) {
+                if (warSkillPathPoints > (totalSkillPathPoints * 0,75)) {
                     skillpath = 'War';
-                } else if (ecoSkillPathPoints > warSkillPathPoints) {
+                } else if (ecoSkillPathPoints > (totalSkillPathPoints * 0,75)) {
                     skillpath = 'Eco';
+                }else{
+                    skillpath = 'Hybrid'
                 }
             }else{
                 skillpath = 'Aufbau';
@@ -193,7 +197,6 @@ class ArticleHandler extends BaseSubHandler {
 
     async getWrapper() {
         const articleData = await this.#getArticle();
-        this.forceUpdate = false; 
         return articleData;
     }
 }
@@ -231,7 +234,6 @@ class CountryHandler extends BaseSubHandler {
 
     async getWrapper(countryId = null) {
         const result = await this.#getCountries(countryId);
-        this.forceUpdate = false; 
         return result;
     }
     
@@ -378,7 +380,6 @@ class MuHandler extends BaseSubHandler {
         const geparsteGruppen = this.#parseMUFromArticle(articleData);
         const MUs = await this.#getMU(geparsteGruppen);
         
-        this.forceUpdate = false;
         return MUs;
     }   
 
@@ -582,6 +583,33 @@ export class DataHandler {
         this.users = new UserHandler(this);
         this.layout = new LayoutHandler(this);
     }
+    validateAndCleanCache() {
+        try {
+            const handlers = [this.articles, this.countries, this.mus, this.users, this.layout];
+            Object.keys(localStorage).forEach(storageKey => {
+                const passenderHandler = handlers.find(h => storageKey.startsWith(h.cacheConfig.prefix));
+                if (!passenderHandler) return;
+    
+                const duration = passenderHandler.cacheConfig.duration;
+                if (duration === Infinity) return;
+    
+                const rawItem = localStorage.getItem(storageKey);
+                if (!rawItem) return;
+    
+                try {
+                    const { timestamp } = JSON.parse(rawItem);
+                    if (!timestamp || (Date.now() - timestamp >= duration)) {
+                        localStorage.removeItem(storageKey);
+                        console.log(`[Cache-Cleanup] Gelöscht: ${storageKey}`);
+                    }
+                } catch {
+                    localStorage.removeItem(storageKey);
+                }
+            });
+        } catch (e) {
+            console.error("Fehler beim Initial-Cache-Cleanup:", e);
+        }
+    }
 
     // ==========================================
     // GETTER (Öffentlicher Lesezugriff)
@@ -652,7 +680,6 @@ export class DataHandler {
 
     set forceUpdate(value) {
         this._forceUpdate = !!value;
-        console.log(`Zentraler forceUpdate-Zustand geändert auf: ${this._forceUpdate}`);
     }
 
     setArticleId(newId) {

@@ -64,17 +64,30 @@ export function sortUserList(list, sortConfig) {
           valA = a.lastConnectionAt ? new Date(a.lastConnectionAt).getTime() : 0;
           valB = b.lastConnectionAt ? new Date(b.lastConnectionAt).getTime() : 0;
       } else if (key === 'skillpath') {
-          valA = a.skillpath || '';
-          valB = b.skillpath || '';
-          // Wenn der Skillpath absolut identisch ist, greift der Secondary Sort Key (Level absteigend)
-          if (valA === valB) {
-            const levelA = a.level || 0;
-            const levelB = b.level || 0;
-            
-            // Da es IMMER absteigend (höchstes Level zuerst) sein soll, 
-            // ignorieren wir hier das 'direction' der Hauptkonfiguration
-            return levelB - levelA; 
+         
+          const pathOrder = ["War", "Hybrid", "Eco", "Aufbau"];
+          
+          const pathA = a.skillpath || '';
+          const pathB = b.skillpath || '';
+
+          // Findet den Index. Wenn kein Match (z.B. ""), ans Ende der Liste setzen (Index 99)
+          let idxA = pathOrder.indexOf(pathA);
+          let idxB = pathOrder.indexOf(pathB);
+          if (idxA === -1) idxA = 99;
+          if (idxB === -1) idxB = 99;
+
+          if (idxA !== idxB) {
+              // Nutzt das bestehende direction-System:
+              // 'asc'  -> [War, Hybrid, Eco, Aufbau] (da Index 0 kleiner als Index 3 ist)
+              // 'desc' -> [Aufbau, Eco, Hybrid, War]
+              return direction === 'asc' ? idxA - idxB : idxB - idxA;
           }
+
+          // Sekundärer Sort-Key: Wenn Skillpath identisch ist, nach Level absteigend sortieren
+          const levelA = a.level || 0;
+          const levelB = b.level || 0;
+          return levelB - levelA; 
+
       } else if (key === 'buffs') {
           // Sortierung: Wer Buffs/Debuffs hat, wandert nach oben
           const hasBuffA = a.buffs?.buffCodes?.length || a.buffs?.debuffCodes?.length || 0;

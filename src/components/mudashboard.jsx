@@ -110,11 +110,18 @@ function MuManagement({ managers = [], commanders = [] }) {
 
 export function UserCell({ user, isObject }) {
   const userName = isObject ? user.username : `User-ID: ${user}`;
+  const userId = isObject ? user._id : user;
   const hasAvatar = isObject && user.avatarUrl && user.avatarUrl !== "";
+  const profileUrl = `https://app.warera.io/user/${userId}`;
 
   return (
     <td className="user-name-cell">
-      <div className="mu-table-flex-container">
+          <a 
+            href={profileUrl} 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="mu-table-flex-container mu-profile-link"
+          >
         <div className="mu-table-avatar-wrapper">
           {hasAvatar ? (
             <img src={user.avatarUrl} alt={userName} className="mu-table-avatar" />
@@ -146,7 +153,7 @@ export function UserCell({ user, isObject }) {
           )}
         </div>
         <span className="mu-table-username-text">{userName}</span>
-      </div>
+      </a>
     </td>
   );
 }
@@ -171,6 +178,7 @@ export function SkillpathBadge({ user, isObject }) {
   
   if (path === "Aufbau") badgeClass = "badge-blue";
   if (path === "Eco") badgeClass = "badge-green";
+  if (path === "Hybrid") badgeClass = "badge-yellow";
   if (path === "War") badgeClass = "badge-red";
 
   return <div className={`pill-badge ${badgeClass}`}>{path || "Keiner"}</div>;
@@ -224,9 +232,16 @@ function MuUserList({ members = [], muUsers = [], isLoadingUsers = false }) {
 
   const requestSort = (key) => {
     let direction = 'desc';
-    if (sortConfig.key === key && sortConfig.direction === 'desc') {
-      direction = 'asc';
+    
+    // Spezialfall für Skillpath: Soll beim ersten Klick mit 'asc' (War zuerst) starten
+    if (key === 'skillpath') {
+      direction = (sortConfig.key === 'skillpath' && sortConfig.direction === 'asc') ? 'desc' : 'asc';
+    } else {
+      if (sortConfig.key === key && sortConfig.direction === 'desc') {
+        direction = 'asc';
+      }
     }
+    
     setSortConfig({ key, direction });
   };
 
@@ -259,25 +274,72 @@ function MuUserList({ members = [], muUsers = [], isLoadingUsers = false }) {
       ) : (
         <div className="mu-user-table-wrapper">
           <table className="mu-user-table">
-            <thead>
+          <thead>
               <tr>
                 <th onClick={() => requestSort('name')} className="sortable-header">
-                  Name / ID {renderSortArrow('name')}
+                  <div className="th-content-wrapper">
+                    Name / ID {renderSortArrow('name')}
+                    <div className="mu-tooltip-container" onClick={(e) => e.stopPropagation()}>
+                      <span className="mu-info-btn">i</span>
+                      <div className="mu-tooltip-text">Klick öffnet das Profil.</div>
+                    </div>
+                  </div>
                 </th>
                 <th onClick={() => requestSort('damage')} className="sortable-header">
-                  Weekly Damage {renderSortArrow('damage')}
+                  <div className="th-content-wrapper">
+                    Weekly Damage {renderSortArrow('damage')}
+                    <div className="mu-tooltip-container" onClick={(e) => e.stopPropagation()}>
+                      <span className="mu-info-btn">i</span>
+                      <div className="mu-tooltip-text">Der gesamte verursachte Schaden des Spielers in dieser Woche.</div>
+                    </div>
+                  </div>
                 </th>
                 <th onClick={() => requestSort('level')} className="sortable-header">
-                  Userlevel {renderSortArrow('level')}
+                  <div className="th-content-wrapper">
+                    Userlevel {renderSortArrow('level')}
+                    <div className="mu-tooltip-container" onClick={(e) => e.stopPropagation()}>
+                      <span className="mu-info-btn">i</span>
+                      <div className="mu-tooltip-text">Das aktuelle Ingame-Level</div>
+                    </div>
+                  </div>
                 </th>
                 <th onClick={() => requestSort('active')} className="sortable-header">
-                  Last Online {renderSortArrow('active')}
+                  <div className="th-content-wrapper">
+                    Last Online {renderSortArrow('active')}
+                    <div className="mu-tooltip-container" onClick={(e) => e.stopPropagation()}>
+                      <span className="mu-info-btn">i</span>
+                      <div className="mu-tooltip-text">
+                        Vergangene Zeit seit der letzten Aktivität.<br /> 
+                        Grün: Online vor weniger als 15min.<br />
+                        Rot: Offline, aber noch aktiver Bürger.<br />
+                        Grau: kein aktiver Bürger mehr.<br />
+                        </div>
+                    </div>
+                  </div>
                 </th>
                 <th onClick={() => requestSort('skillpath')} className="sortable-header">
-                  Skillpath {renderSortArrow('skillpath')}
+                  <div className="th-content-wrapper">
+                    Skillpath {renderSortArrow('skillpath')}
+                    <div className="mu-tooltip-container" onClick={(e) => e.stopPropagation()}>
+                      <span className="mu-info-btn">i</span>
+                      <div className="mu-tooltip-text"> 
+                        Spezialisierungen:<br /> 
+                          War: {'≥'} 75% der Skillpoints in War Skills<br /> 
+                          Hybrid: 75% {'<'} x {'<'} 25% der Skillpoints in einem Skill.<br /> 
+                          Eco: {'≥'} 75% der Skillpoints in Eco Skills.<br /> 
+                          Aufbau: unter Level 20.
+                        </div>
+                    </div>
+                  </div>
                 </th>
                 <th onClick={() => requestSort('buffs')} className="sortable-header">
-                  Pillen Status {renderSortArrow('buffs')}
+                  <div className="th-content-wrapper">
+                    Pillen Status {renderSortArrow('buffs')}
+                    <div className="mu-tooltip-container" onClick={(e) => e.stopPropagation()}>
+                      <span className="mu-info-btn">i</span>
+                      <div className="mu-tooltip-text">Aktive Buffs oder Debuffs inklusive verbleibender Laufzeit.</div>
+                    </div>
+                  </div>
                 </th>
               </tr>
             </thead>
@@ -326,20 +388,34 @@ function MuDashboard({ selectedMu = null, dataHandler }) {
   useEffect(() => {
     if (!selectedMu?.objekt?._id) return;
 
-    const fetchUserDetails = async () => {
+    const fetchUserDetails = async (force = false) => {
       setIsLoadingUsers(true);
       try {
+        if (force) {
+          dataHandler.setForceUpdate(true); // Erzwingt frische Daten vom Server (wichtig für die Timestamps)
+        }
       const fullUserData = await dataHandler.getMUUserData(selectedMu.objekt._id);
-
       setMuUsers(fullUserData);
+
       } catch (err) {
         console.error("Fehler beim Laden der User-Details:", err);
       } finally {
+        if (force) {
+          dataHandler.setForceUpdate(false); // Flag nach dem Call sofort wieder zurücksetzen
+        }
         setIsLoadingUsers(false);
       }
     };
 
     fetchUserDetails();
+
+    const intervalId = setInterval(() => {
+      console.log("[Polling] Hole frische User-Daten für MU:", selectedMu.objekt._id);
+      fetchUserDetails(true); // Hier mit true, um den Cache zu umgehen
+    }, 5 * 60 * 1000);
+
+    // 3. Cleanup: Intervall löschen, wenn die Komponente verlassen oder selectedMu gewechselt wird
+    return () => clearInterval(intervalId);
   }, [selectedMu, dataHandler]);
 
   if (!selectedMu || !selectedMu.objekt) {
