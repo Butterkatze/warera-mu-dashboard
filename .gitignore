@@ -14,6 +14,7 @@ dist
 dist-ssr
 *.local
 old_stuff
+sample_responses
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

@@ -1,21 +1,10 @@
 import { useState} from 'react';
 import './tokenhandler.css';
 
-export default function  Tokenhandler({ setApiKey, DEFAULT_ARTICLE_ID , setArticleId, onRefresh, onClose, dataHandler }) {
-    const [localKey, setLocalKey] = useState(() => {
-      try {
-        return localStorage.getItem("warera_api_key") || '';
-      } catch {
-        return '';
-      }
-    });
-    const [localArticleId, setLocalArticleId] = useState(() => {
-      try {
-        return localStorage.getItem("warera_article_id") || '';
-      } catch {
-        return '';
-      }
-    });
+export default function  Tokenhandler({ DEFAULT_ARTICLE_ID , onRefresh, onClose, dataHandler }) {
+    // Wir nutzen einfach die Getter des DataHandlers für die Startwerte!
+    const [localKey, setLocalKey] = useState(() => dataHandler?.apiKey || '');
+    const [localArticleId, setLocalArticleId] = useState(() => dataHandler?.currentArticleId || '');
 
     const [noKey, setNoKey] = useState(false);
     const [status, setStatus] = useState({ type: '', message: '' });
@@ -26,7 +15,7 @@ export default function  Tokenhandler({ setApiKey, DEFAULT_ARTICLE_ID , setArtic
     const handleValidate = async (e) => {
       e.preventDefault();
       const cleanKey = localKey.trim();
-      const finalArticleId = localArticleId.trim() || DEFAULT_ARTICLE_ID;
+      const finalArticleId = localArticleId.trim();
       
       
 
@@ -38,16 +27,15 @@ export default function  Tokenhandler({ setApiKey, DEFAULT_ARTICLE_ID , setArtic
       setStatus({ type: 'loading', message: '...' });
   
       try {
-        localStorage.setItem('warera_api_key', cleanKey);
-        localStorage.setItem('warera_article_id', finalArticleId);
-        
-        dataHandler.setArticleId(finalArticleId)
-        dataHandler.updateClient();
-        await dataHandler.getArticleWrapper();
-        console.log("Login")
-
-        setApiKey(cleanKey);
-        setArticleId(localArticleId);
+        if (dataHandler) {
+          // JETZT GETRENNT: Beide Werte separat an den Handler übergeben
+          dataHandler.saveApiKey(cleanKey);
+          dataHandler.saveArticleId(finalArticleId);
+  
+          // Verbindungstest durchführen
+          await dataHandler.getArticleWrapper();
+          console.log("Login erfolgreich!");
+        }
 
         if (onRefresh) onRefresh();
 
@@ -64,8 +52,12 @@ export default function  Tokenhandler({ setApiKey, DEFAULT_ARTICLE_ID , setArtic
   
       } catch (error) {
         console.error(error);
-        localStorage.removeItem('warera_api_key');
-        localStorage.removeItem('warera_article_id');
+
+        if (dataHandler) {
+          dataHandler.clearApiKey();
+          dataHandler.clearArticleId();
+        }
+
         setStatus({ type: 'error', message: 'API-Token und/oder Article-ID sind ungültig!' });
       }
     };
