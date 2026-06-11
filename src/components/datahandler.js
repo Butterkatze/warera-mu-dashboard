@@ -139,7 +139,7 @@ class BaseSubHandler {
                                             
             const userLevel = apiData.leveling?.level || 0;
             
-            if (userLevel > 20) {   //Wenn unter Level 20 = Aufbau
+            if (userLevel > 20) { 
                 if (warSkillPathPoints > ecoSkillPathPoints) {
                     skillpath = 'War';
                 } else if (ecoSkillPathPoints > warSkillPathPoints) {
@@ -665,6 +665,16 @@ export class DataHandler {
 
     updateClient() {
         this.client = getWarEraClient();
+    }
+
+    _safeGetLocalStorage(key, defaultValue) {
+        try {
+            const item = localStorage.getItem(key);
+            return item !== null ? item : defaultValue;
+        } catch (error) {
+            console.error(`Fehler beim sicheren Lesen von ${key} aus dem LocalStorage:`, error);
+            return defaultValue;
+        }
     }
 
     // Öffentliche Schnittstellen für React

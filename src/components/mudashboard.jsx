@@ -1,4 +1,9 @@
 import { useState, useEffect } from 'react';
+import { 
+  sortUserList, 
+  getRemainingBuffTime, 
+  formatTimeSinceConnection
+} from './mudashboardhelpers.js';
 import './mudashboard.css';
 
 // ==========================================================================
@@ -100,15 +105,123 @@ function MuManagement({ managers = [], commanders = [] }) {
 }
 
 // ==========================================================================
+// Unterkomponenten der Userliste
+// ==========================================================================
+
+export function UserCell({ user, isObject }) {
+  const userName = isObject ? user.username : `User-ID: ${user}`;
+  const hasAvatar = isObject && user.avatarUrl && user.avatarUrl !== "";
+
+  return (
+    <td className="user-name-cell">
+      <div className="mu-table-flex-container">
+        <div className="mu-table-avatar-wrapper">
+          {hasAvatar ? (
+            <img src={user.avatarUrl} alt={userName} className="mu-table-avatar" />
+          ) : (
+            <div className="mu-table-avatar-placeholder">?</div>
+          )}
+
+          {isObject && user.country && typeof user.country === 'string' && user.country.length <= 3 && (
+            (() => {
+              const cleanCode = user.country.trim().toLowerCase();
+              try {
+                const flagUrl = new URL(`./flags/${cleanCode}.svg`, import.meta.url).href;
+                return (
+                  <img 
+                    src={flagUrl} 
+                    alt={`Flagge ${cleanCode}`} 
+                    className="mu-table-flag-overlay"
+                    onError={(e) => { 
+                      e.target.onerror = null; 
+                      e.target.style.display = 'none'; 
+                    }}
+                  />
+                );
+              } catch (err) {
+                console.error("Fehler beim Laden des SVG-Pfads", err);
+                return null;
+              }
+            })()
+          )}
+        </div>
+        <span className="mu-table-username-text">{userName}</span>
+      </div>
+    </td>
+  );
+}
+
+export function OnlineBadge({ user, isObject, serverTime }) {
+  if (!serverTime) return <div className="pill-badge badge-gray">...</div>;
+
+  const diffMs = isObject && user.lastConnectionAt ? serverTime - new Date(user.lastConnectionAt).getTime() : Infinity;
+  const diffMins = Math.floor(diffMs / 60000);
+  const timeDisplay = isObject ? formatTimeSinceConnection(user.lastConnectionAt) : 'Nie';
+
+  let badgeClass = "badge-gray";
+  if (isObject && user.isActive) {
+    badgeClass = diffMins <= 15 ? "badge-green" : "badge-red";
+  }
+  return <div className={`pill-badge ${badgeClass}`}>{timeDisplay}</div>;
+}
+
+export function SkillpathBadge({ user, isObject }) {
+  const path = isObject ? user.skillpath : null;
+  let badgeClass = "badge-gray";
+  
+  if (path === "Aufbau") badgeClass = "badge-blue";
+  if (path === "Eco") badgeClass = "badge-green";
+  if (path === "War") badgeClass = "badge-red";
+
+  return <div className={`pill-badge ${badgeClass}`}>{path || "Keiner"}</div>;
+}
+
+export function PillenBadge({ user, isObject }) {
+  if (!isObject || !user.buffs) return <span className="mu-no-data">-</span>;
+
+  const hasBuff = user.buffs.buffCodes?.includes("cocain");
+  const hasDebuff = user.buffs.debuffCodes?.includes("cocain");
+
+  if (hasBuff) {
+    const timer = getRemainingBuffTime(user.buffs.buffEndAt) || "Aktiv";
+    return <div className="pill-badge badge-green">Pillenbuff ({timer})</div>;
+  }
+  if (hasDebuff) {
+    const timer = getRemainingBuffTime(user.buffs.debuffEndAt) || "Aktiv";
+    return <div className="pill-badge badge-red">Pillendebuff ({timer})</div>;
+  }
+  return <span className="mu-no-data">-</span>;
+}
+
+// ==========================================================================
 // 3. Komponente: User- / Mitgliederliste (Unten)
 // ==========================================================================
 function MuUserList({ members = [], muUsers = [], isLoadingUsers = false }) {
-  // 1. States für Sortier-Spalte und Richtung definieren
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'desc' });
 
+  //==================================================
+  // Update logik
+  const [currentTime, setCurrentTime] = useState(null);
+  
+  useEffect(() => {
+    // Schiebt das Setzen der Zeit ans Ende der JavaScript-Ereignisschleife (asynchron)
+    // Das verhindert das "cascading renders"-Problem komplett!
+    const timeout = setTimeout(() => setCurrentTime(Date.now()), 0);
+
+    // Aktualisiert die Zeit ab dann jede Sekunde
+    const interval = setInterval(() => setCurrentTime(Date.now()), 1000);
+    
+    return () => {
+      clearTimeout(timeout);
+      clearInterval(interval);
+    };
+  }, []);
+
+  //==========================
+  // Sortierlogik
+
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'desc' });
   const displayList = muUsers && muUsers.length > 0 ? muUsers : members;
 
-  // 2. Sortier-Handler: Wechselt Richtung oder Spalte bei Klick
   const requestSort = (key) => {
     let direction = 'desc';
     if (sortConfig.key === key && sortConfig.direction === 'desc') {
@@ -117,40 +230,11 @@ function MuUserList({ members = [], muUsers = [], isLoadingUsers = false }) {
     setSortConfig({ key, direction });
   };
 
-  // 3. Die Daten basierend auf dem State sortieren
-  const sortedList = [...displayList].sort((a, b) => {
-    if (!sortConfig.key) return 0; // Keine Sortierung gewählt
+  // Nutzt die ausgelagerte Sortierfunktion aus muHelpers
+  const sortedList = sortUserList(displayList, sortConfig);
 
-    const isAObj = typeof a === 'object';
-    const isBObj = typeof b === 'object';
-
-    let valA, valB;
-
-    // Werte je nach Spalte extrahieren
-    if (sortConfig.key === 'name') {
-      valA = isAObj ? (a.username || '').toLowerCase() : String(a).toLowerCase();
-      valB = isBObj ? (b.username || '').toLowerCase() : String(b).toLowerCase();
-    } else if (sortConfig.key === 'damage') {
-      valA = isAObj ? (a.weeklyUserDamages || 0) : 0;
-      valB = isBObj ? (b.weeklyUserDamages || 0) : 0;
-    } else if (sortConfig.key === 'level') {
-      valA = isAObj ? (a.level || 0) : 0;
-      valB = isBObj ? (b.level || 0) : 0;
-    } else if (sortConfig.key === 'active') {
-      valA = isAObj ? (a.isActive ? 1 : 0) : -1;
-      valB = isBObj ? (b.isActive ? 1 : 0) : -1;
-    }
-
-    if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
-    if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
-    return 0;
-  });
-
-  // Helper, um den aktiven Sortier-Pfeil im Header anzuzeigen
   const renderSortArrow = (name) => {
-    // Ist das die aktuell sortierte Spalte?
     const isActive = sortConfig.key === name;
-    // Wenn aktiv, nimm die echte Richtung, sonst Standard 'desc' für den Platzhalter
     const arrow = isActive && sortConfig.direction === 'asc' ? '▲' : '▼';
   
     return (
@@ -187,70 +271,38 @@ function MuUserList({ members = [], muUsers = [], isLoadingUsers = false }) {
                   Userlevel {renderSortArrow('level')}
                 </th>
                 <th onClick={() => requestSort('active')} className="sortable-header">
-                  Aktiver Bürger {renderSortArrow('active')}
+                  Last Online {renderSortArrow('active')}
+                </th>
+                <th onClick={() => requestSort('skillpath')} className="sortable-header">
+                  Skillpath {renderSortArrow('skillpath')}
+                </th>
+                <th onClick={() => requestSort('buffs')} className="sortable-header">
+                  Pillen Status {renderSortArrow('buffs')}
                 </th>
               </tr>
             </thead>
             <tbody>
               {sortedList.map((user, idx) => {
                 const isObject = typeof user === 'object';
-                const userName = isObject ? user.username : `User-ID: ${user}`;
                 const userRank = isObject && user.level ? `Level ${user.level}` : 'Mitglied';
                 const weeklyDamage = isObject && user.weeklyUserDamages ? user.weeklyUserDamages.toLocaleString('de-DE') : '0';
-                const isActive = isObject ? (user.isActive ? 'aktiv' : 'inaktiv') : 'keine Daten';
-                const hasAvatar = isObject && user.avatarUrl && user.avatarUrl !== "";
 
                 return (
                   <tr key={user._id || idx}>
-                    <td className="user-name-cell">
-                      <div className="mu-table-flex-container">
-                        
-                        {/* AVATAR WRAPPER (Hier muss alles rein!) */}
-                        <div className="mu-table-avatar-wrapper">
-                          {hasAvatar ? (
-                            <img src={user.avatarUrl} alt={userName} className="mu-table-avatar" />
-                          ) : (
-                            <div className="mu-table-avatar-placeholder">?</div>
-                          )}
-
-                          {/* LANDESFLAGGE: Jetzt INSIDE dem relativen Wrapper */}
-                          {isObject && user.country && (
-                            (() => {
-                              const countryData = user.country;
-                              if (typeof countryData === 'string' && countryData.length <= 3) {
-                                const cleanCode = countryData.trim().toLowerCase();
-                                try {
-                                  const flagUrl = new URL(`./flags/${cleanCode}.svg`, import.meta.url).href;
-                                  return (
-                                    <img 
-                                      src={flagUrl} 
-                                      alt={`Flagge ${cleanCode}`} 
-                                      className="mu-table-flag-overlay"
-                                      onError={(e) => { 
-                                        e.target.onerror = null; 
-                                        e.target.style.display = 'none'; 
-                                      }}
-                                    />
-                                  );
-                                } catch (err) {
-                                  console.error("Fehler beim Laden des SVG-Pfads", err);
-                                  return null;
-                                }
-                              }
-                              return null;
-                            })()
-                          )}
-                        </div> {/* Ende des Wrappers */}
-
-                        {/* 3. USERNAME TEXT */}
-                        <span className="mu-table-username-text">{userName}</span>
-                      </div>
-                    </td>
+                    {/* Das Mapping ist jetzt extrem übersichtlich und komponentenorientiert */}
+                    <UserCell user={user} isObject={isObject} />
+                    
                     <td>{weeklyDamage}</td>
                     <td>{userRank}</td>
-                    <td>
-                      <span className={`status-dot ${isActive}`}></span>
-                      {isActive}
+                    
+                    <td className="mu-text-center">
+                      <OnlineBadge user={user} isObject={isObject} serverTime={currentTime} />
+                    </td>
+                    <td className="mu-text-center">
+                      <SkillpathBadge user={user} isObject={isObject} />
+                    </td>
+                    <td className="mu-text-center">
+                      <PillenBadge user={user} isObject={isObject} />
                     </td>
                   </tr>
                 );

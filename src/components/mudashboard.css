@@ -337,3 +337,51 @@
                 0 0 0 1px var(--color-border-stat-box);
     z-index: 5;
   }
+
+  /* ==========================================================================
+   Erweiterung: Pillen-Badges für Online-Status, Skillpath & Buffs
+   ========================================================================== */
+
+.pill-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 9999px; /* Erzeugt die perfekt abgerundete Pille */
+  text-align: center;
+  min-width: 80px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+/* Farbvariationen mit semi-transparentem Gaming-Dashboard-Look */
+.badge-green {
+  background-color: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.badge-red {
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.badge-blue {
+  background-color: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.badge-gray {
+  background-color: rgba(156, 163, 175, 0.15);
+  /* Nutzt deine bestehende CSS-Variable für inaktiven Text */
+  color: var(--color-text-muted); 
+  border: 1px solid rgba(156, 163, 175, 0.3);
+}
+
+/* Hilfsklasse um den Zellinhalt in den neuen Spalten mittig auszurichten */
+.mu-text-center {
+  text-align: center !important;
+}
