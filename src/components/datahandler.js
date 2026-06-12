@@ -76,6 +76,23 @@ class BaseSubHandler {
         return (level * (level + 1)) / 2;
     }
 
+    decimalAdjust(type, value, exp) {
+        if (typeof exp === 'undefined' || +exp === 0) {
+          return Math[type](value);
+        }
+        value = +value;
+        exp = +exp;
+        // If the value is not a number or the exp is not an integer...
+        if (isNaN(value) || !(typeof exp === 'number' && exp % 1 === 0)) {
+          return NaN;
+        }
+        // Shift
+        value = value.toString().split('e');
+        value = Math[type](+(value[0] + 'e' + (value[1] ? (+value[1] - exp) : -exp)));
+        // Shift back
+        value = value.toString().split('e');
+        return +(value[0] + 'e' + (value[1] ? (+value[1] + exp) : exp));
+      }
 
 
     //============================================
@@ -142,9 +159,9 @@ class BaseSubHandler {
             const userLevel = apiData.leveling?.level || 0;
             
             if (userLevel > 20) { 
-                if (warSkillPathPoints > (totalSkillPathPoints * 0,75)) {
+                if (warSkillPathPoints > (totalSkillPathPoints * 0.75)) {
                     skillpath = 'War';
-                } else if (ecoSkillPathPoints > (totalSkillPathPoints * 0,75)) {
+                } else if (ecoSkillPathPoints > (totalSkillPathPoints * 0.75)) {
                     skillpath = 'Eco';
                 }else{
                     skillpath = 'Hybrid'
@@ -163,6 +180,17 @@ class BaseSubHandler {
             isActive: apiData.isActive,
             weeklyUserDamages: apiData.rankings?.weeklyUserDamages?.value,
             skillpath: skillpath || 'Fehler',
+            skills: {
+                "health": {
+                    "currentBarValue": this.decimalAdjust("round", apiData.skills?.health?.currentBarValue, -1),
+                    "value": apiData.skills?.health?.value,
+                },
+                "hunger": {
+                    "currentBarValue": this.decimalAdjust("round", apiData.skills?.hunger?.currentBarValue, -1),
+                    "value": apiData.skills?.hunger?.value,
+                },
+
+            },
             buffs:{
                 "buffCodes": apiData.buffs?.buffCodes || [],
                 "buffEndAt": apiData.buffs?.buffEndAt || null,

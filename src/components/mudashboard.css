@@ -90,21 +90,9 @@
     color: var(--color-success);
   }
   
-  /* Spezifische Text-Farben */
+  /* Spezifische Text-Farben & Zustände */
   .text-gold {
-    color: #ffd700; /* Beibehalten, da es eine feste Akzentfarbe für Gold-Ränge/Werte ist */
-  }
-  
-  /* Management Listen */
-  .mu-management-section {
-    margin-bottom: 15px;
-  }
-  
-  .mu-management-section h4 {
-    margin: 0 0 8px 0;
-    font-size: 0.85rem;
-    color: var(--color-text-muted);
-    text-transform: uppercase;
+    color: #ffd700;
   }
   
   .mu-no-data, .mu-no-selection {
@@ -120,60 +108,20 @@
     border-radius: 8px;
   }
   
-  /* ==========================================================================
-     User Liste Tabelle
-     ========================================================================== */
-  
-  .mu-user-table-wrapper {
-    border: 1px solid var(--color-border-stat-box);
-    border-radius: 6px;
-    overflow: visible;
+  .mu-loading-inline {
+    font-size: 0.75rem;
+    color: var(--color-primary);
+    margin-bottom: 10px;
+    animation: pulse 1.5s infinite ease-in-out;
   }
   
-  .mu-user-table {
-    width: 100%;
-    border-collapse: collapse;
-    text-align: left;
-    font-size: 0.85rem;
+  @keyframes pulse {
+    0% { opacity: 0.6; }
+    50% { opacity: 1; }
+    100% { opacity: 0.6; }
   }
   
-  .mu-user-table th {
-    background-color: var(--color-bg-stat-box);
-    color: var(--color-text-secondary);
-    padding: 10px;
-    font-weight: 600;
-    position: sticky;
-    top: 0;
-    z-index: 2;
-    border-right: 1px solid var(--color-table-divider);
-    border-bottom: 2px solid var(--color-table-divider);
-  }
-
-  .mu-user-table th:last-child {
-    border-right: none;
-  }
-  
-  .mu-user-table td {
-    padding: 8px 10px;
-    border-bottom: 1px solid var(--color-border-stat-box);
-    border-right: 1px solid var(--color-table-divider);
-    color: var(--color-text-primary);
-    vertical-align: middle;
-  }
-
-  .mu-user-table td:last-child {
-    border-right: none;
-  }
-  
-  .mu-user-table tr:hover {
-    background-color: var(--color-bg-clickable-hover);
-  }
-  
-  .user-name-cell {
-    font-family: monospace;
-  }
-  
-  /* Status Indikatoren */
+  /* Globale Status-Punkte */
   .status-dot {
     display: inline-block;
     width: 7px;
@@ -191,22 +139,20 @@
     background-color: var(--color-text-muted);
   }
   
-  .mu-loading-inline {
-    font-size: 0.75rem;
-    color: var(--color-primary);
-    margin-bottom: 10px;
-    animation: pulse 1.5s infinite ease-in-out;
-  }
-  
-  @keyframes pulse {
-    0% { opacity: 0.6; }
-    50% { opacity: 1; }
-    100% { opacity: 0.6; }
-  }
-  
   /* ==========================================================================
-     Erweiterung für die Führungs-Karten (Avatare im Management)
+     Management Listen & Führungskarten (Avatare im Management)
      ========================================================================== */
+  
+  .mu-management-section {
+    margin-bottom: 15px;
+  }
+  
+  .mu-management-section h4 {
+    margin: 0 0 8px 0;
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+  }
   
   .mu-management-cards-container {
     display: flex;
@@ -226,11 +172,11 @@
   }
   
   .mu-leader-card.manager-item {
-    border-left: 3px solid #ffb74d; /* Feste Kennzeichnungsfarbe für Manager-Rolle */
+    border-left: 3px solid #ffb74d;
   }
   
   .mu-leader-card.commander-item {
-    border-left: 3px solid #64b5f6; /* Feste Kennzeichnungsfarbe für Commander-Rolle */
+    border-left: 3px solid #64b5f6;
   }
   
   .mu-leader-avatar-wrapper {
@@ -260,233 +206,8 @@
     font-weight: bold;
   }
   
-  /* Text-Styling für den Namen */
   .mu-leader-name {
     font-size: 14px;
     font-weight: 500;
     color: var(--color-text-primary);
   }
-  
-  /* ==========================================================================
-     Erweiterung für Avatare in der Mitglieder-Tabelle
-     ========================================================================== */
-  /* Styling für den neuen Profil-Link in der Mitgliederliste */
-  .mu-profile-link {
-    text-decoration: none;
-    color: inherit;
-    display: flex;
-    align-items: center;
-    width: 100%;
-    height: 100%;
-  }
-
-  .mu-profile-link:hover .mu-table-username-text {
-    text-decoration: underline;
-    cursor: pointer;
-  }
-  .mu-table-avatar-wrapper {
-    position: relative;
-    width: 40px;  
-    height: 40px;
-    display: inline-block;
-    flex-shrink: 0;
-  }
-  
-  .mu-table-avatar {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 1px solid var(--color-border-stat-box);
-    display: block;
-  }
-  
-  /* Platzhalter-Icon, falls ein Member kein Profilbild hat */
-  .mu-table-avatar-placeholder {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    background-color: var(--color-bg-stat-box);
-    color: var(--color-text-muted);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-    font-weight: bold;
-  }
-  
-  /* Text-Styling innerhalb der Tabellenzelle */
-  .mu-table-username-text {
-    font-size: 14px;
-    color: var(--color-text-primary);
-  }
-  
-  .sortable-header {
-    cursor: pointer;
-    user-select: none;
-  }
-  
-  .sortable-header:hover {
-    background-color: var(--color-bg-stat-box);
-  }
-  
-  /* Container, der Avatar, Flagge und Text in der Zelle nebeneinander anordnet */
-  .mu-table-flex-container {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  
-  /* Die Landesflagge schwebt absolut über der unteren linken Ecke des Avatars */
-  .mu-table-flag-overlay {
-    position: absolute;
-    bottom: -2px;
-    left: -2px;
-    width: 18px;
-    height: 12px;
-    object-fit: cover;
-    border-radius: 2px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6), 
-                0 0 0 1px var(--color-border-stat-box);
-    z-index: 5;
-  }
-
-  /* ==========================================================================
-   Erweiterung: Pillen-Badges für Online-Status, Skillpath & Buffs
-   ========================================================================== */
-
-.pill-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 4px 12px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  border-radius: 9999px; /* Erzeugt die perfekt abgerundete Pille */
-  text-align: center;
-  min-width: 80px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
-}
-
-/* Farbvariationen mit semi-transparentem Gaming-Dashboard-Look */
-.badge-green {
-  background-color: rgba(34, 197, 94, 0.15);
-  color: #22c55e;
-  border: 1px solid rgba(34, 197, 94, 0.3);
-}
-
-.badge-red {
-  background-color: rgba(239, 68, 68, 0.15);
-  color: #ef4444;
-  border: 1px solid rgba(239, 68, 68, 0.3);
-}
-
-.badge-blue {
-  background-color: rgba(59, 130, 246, 0.15);
-  color: #3b82f6;
-  border: 1px solid rgba(59, 130, 246, 0.3);
-}
-
-.badge-gray {
-  background-color: rgba(156, 163, 175, 0.15);
-  color: var(--color-text-muted); 
-  border: 1px solid rgba(156, 163, 175, 0.3);
-}
-
-.badge-yellow {
-  background-color: rgba(234, 179, 8, 0.15);
-  color: #eab308;
-  border: 1px solid rgba(234, 179, 8, 0.3);
-}
-
-/* Hilfsklasse um den Zellinhalt in den neuen Spalten mittig auszurichten */
-.mu-text-center {
-  text-align: center !important;
-}
-
-/* ====================================================*/
-/* Hoveroverinfo 
-
-/* Container für die Ausrichtung im Tabellenkopf */
-.th-content-wrapper {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  position: relative;
-}
-
-/* Tooltip Basis-Container */
-.mu-tooltip-container {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-}
-
-/* Der runde (i) Hilfe-Knopf */
-.mu-info-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 15px;
-  height: 15px;
-  border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  background-color: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 11px;
-  font-family: monospace;
-  font-weight: bold;
-  cursor: help;
-  transition: all 0.2s ease;
-}
-
-/* Hover-Effekt für den Info-Knopf */
-.mu-tooltip-container:hover .mu-info-btn {
-  border-color: #eab308; /* Matcht deine neue gelbe Farbe */
-  color: #eab308;
-  background-color: rgba(234, 179, 8, 0.1);
-}
-
-/* Der eigentliche Tooltip-Text (Gaming-Dashboard-Look) */
-.mu-tooltip-text {
-  visibility: hidden;
-  position: absolute;
-  bottom: 25px; /* Präzise Platzierung über dem i-Button */
-  left: 50%;
-  transform: translateX(-50%);
-  width: 200px; /* Leicht erhöht für besseren Textfluss */
-  background-color: #121214;
-  color: #e2e8f0;
-  text-align: center;
-  padding: 8px 12px;
-  border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.7);
-  font-size: 11px;
-  font-weight: normal;
-  line-height: 1.4;
-  z-index: 9999; /* Garantiert über allen Elementen */
-  opacity: 0;
-  transition: opacity 0.2s ease, visibility 0.2s ease;
-  pointer-events: none;
-}
-
-
-/* Kleiner Pfeil nach unten am Tooltip */
-.mu-tooltip-text::after {
-  content: "";
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  margin-left: -5px;
-  border-width: 5px;
-  border-style: solid;
-  border-color: rgba(255, 255, 255, 0.15) transparent transparent transparent;
-}
-
-/* Sichtbarkeit triggern bei Hover über den Container */
-.mu-tooltip-container:hover .mu-tooltip-text {
-  visibility: visible;
-  opacity: 1;
-}

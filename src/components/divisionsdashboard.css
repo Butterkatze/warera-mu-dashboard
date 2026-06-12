@@ -1,0 +1,371 @@
+/* ==========================================================================
+   Globaler Dashboard-Container & Grid-Layout
+   ========================================================================== */
+
+   .divisions-dashboard-container {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    width: 100%;
+  }
+  
+  /* Das Layout für die Divisions-Spalten */
+  .divisions-grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(450px, max-content));
+    gap: 25px; 
+    padding-bottom: 10px;
+    justify-content: start;
+  }
+  
+  /* Eine einzelne Divisions-Spalte */
+  .division-column {
+    min-width: 320px;
+    background-color: var(--color-bg-grid-column);
+    border-radius: 8px;
+    padding: 12px;
+    border: 1px solid var(--color-border);
+    align-self: start; 
+  } 
+  
+  /* Titel der Division (Spaltenkopf) */
+  .division-column-title {
+    color: var(--color-primary);
+    font-size: 1.25rem;
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 15px;
+    border-bottom: 2px solid var(--color-border);
+    padding-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  /* Container für die MUs innerhalb einer Division */
+  .division-column-items {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  
+  /* ==========================================================================
+     MU-Karten (Ehemals Items)
+     ========================================================================== */
+  
+  .mu-card {
+    background-color: var(--color-bg-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    gap: 15px; 
+    align-items: center; 
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  /* Bild-Wrapper links für das MU-Icon */
+  .mu-card-image-wrapper {
+    width: 70px;
+    height: 70px;
+    flex-shrink: 0; 
+    background-color: var(--color-input-bg);
+    border-radius: 6px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--color-border-stat-box);
+  }
+  
+  .mu-card-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .mu-card-placeholder {
+    color: var(--color-text-muted);
+    font-size: 0.75rem;
+    text-align: center;
+    padding: 5px;
+  }
+  
+  /* Rechter Inhaltsbereich der MU-Karte */
+  .mu-card-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .mu-card-title {
+    color: var(--color-text-primary);
+    margin: 0 0 8px 0;
+    font-size: 1.05rem;
+  }
+  
+  /* Kleines Grid für die MU-Schnellübersicht (Dmg, Mem) */
+  .mu-card-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); 
+    gap: 6px; 
+    font-size: 0.75rem;
+  }
+  
+  .mu-card-stat-box {
+    display: flex;
+    justify-content: space-between;
+    background-color: var(--color-bg-stat-box); 
+    padding: 3px 6px;
+    border-radius: 4px;
+    border: 1px solid var(--color-border-stat-box); 
+  }
+  
+  .mu-stat-label {
+    color: var(--color-text-secondary);
+  }
+  
+  .mu-stat-value {
+    color: var(--color-success);
+    font-weight: bold;
+  }
+  
+  /* Interaktive Zustände für MU-Karten */
+  .mu-card.clickable {
+    cursor: pointer;
+    user-select: none; 
+  }
+  
+  .mu-card.clickable:hover {
+    transform: translateY(-2px);
+    border-color: var(--color-primary-hover);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  }
+  
+  /* Highlight-Stil für die aktuell ausgewählte Division */
+  .mu-card.clickable.active-card {
+    border-color: var(--color-primary);
+    background-color: var(--color-bg-clickable-hover);
+    box-shadow: 0 0 8px rgba(234, 179, 8, 0.2);
+  }
+  
+  
+  /* ==========================================================================
+   Globaler Dashboard-Container & Grid-Layout
+   ========================================================================== */
+
+.divisions-dashboard-container {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  width: 100%;
+}
+
+/* Das Layout für die Divisions-Spalten */
+.divisions-grid-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(460px, max-content));
+  gap: 25px; 
+  padding-bottom: 10px;
+  justify-content: start;
+}
+
+/* Eine einzelne Divisions-Spalte */
+.division-column {
+  min-width: 360px;
+  background-color: var(--color-bg-grid-column);
+  border-radius: 8px;
+  padding: 16px;
+  border: 1px solid var(--color-border);
+  align-self: start; 
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+} 
+
+/* Titel der Division (Spaltenkopf) */
+.division-column-title {
+  color: var(--color-primary);
+  font-size: 1.25rem;
+  text-align: center;
+  margin: 0;
+  border-bottom: 2px solid var(--color-border);
+  padding-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Container für die MUs innerhalb einer Division */
+.division-column-items {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+
+/* ==========================================================================
+   MU-Karten
+   ========================================================================== */
+
+.mu-card {
+  background-color: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  gap: 15px; 
+  align-items: center; 
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.mu-card-image-wrapper {
+  width: 65px;
+  height: 65px;
+  flex-shrink: 0; 
+  background-color: var(--color-input-bg);
+  border-radius: 6px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border-stat-box);
+}
+
+.mu-card-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mu-card-placeholder {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  text-align: center;
+  padding: 5px;
+}
+
+.mu-card-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.mu-card-title {
+  color: var(--color-text-primary);
+  margin: 0 0 8px 0;
+  font-size: 1.05rem;
+}
+
+.mu-card-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); 
+  gap: 6px; 
+  font-size: 0.75rem;
+}
+
+.mu-card-stat-box {
+  display: flex;
+  justify-content: space-between;
+  background-color: var(--color-bg-stat-box); 
+  padding: 3px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--color-border-stat-box); 
+}
+
+.mu-stat-label {
+  color: var(--color-text-secondary);
+}
+
+.mu-stat-value {
+  color: var(--color-success);
+  font-weight: bold;
+}
+
+.mu-card.clickable {
+  cursor: pointer;
+  user-select: none; 
+}
+
+.mu-card.clickable:hover {
+  transform: translateY(-2px);
+  border-color: var(--color-primary-hover);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.mu-card.clickable.active-card {
+  border-color: var(--color-primary);
+  background-color: var(--color-bg-clickable-hover);
+  box-shadow: 0 0 8px rgba(234, 179, 8, 0.2);
+}
+
+
+/* ==========================================================================
+   NEU: In-Column Divisions-Statistik-Bereich (2x4 Grid & Diagramm)
+   ========================================================================== */
+
+.division-stats-section {
+  background-color: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* 2 Spalten breit, Reihen richten sich nach Inhalt aus */
+.division-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+/* Kompakte Box für die 8 Statistiken */
+.division-stat-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: var(--color-bg-stat-box);
+  border: 1px solid var(--color-border-stat-box);
+  border-radius: 4px;
+  padding: 6px 10px;
+}
+
+.division-stat-label {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+.division-stat-value {
+  font-size: 0.85rem;
+  color: var(--color-success);
+  font-weight: bold;
+}
+
+/* Der Diagramm-Container innerhalb der Spalte */
+.division-chart-container {
+  background-color: var(--color-bg-grid-column);
+  border: 1px dashed var(--color-border);
+  border-radius: 6px;
+  height: 100px; /* Kompakte Höhe, da es sich in der Spalte befindet */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+}
+
+.chart-placeholder-text {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  font-style: italic;
+}
+
+.divisions-loading {
+  text-align: center;
+  padding: 30px;
+  color: var(--color-text-muted);
+  border: 1px dashed var(--color-border);
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-style: italic;
+}
