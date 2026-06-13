@@ -838,4 +838,5 @@ export class DataHandler {
     saveCustomLayout(spalten) { this.layout.saveCustomLayout(spalten); }
     // Füge das zu den öffentlichen Schnittstellen für React am Ende der DataHandler-Klasse hinzu:
     async getBulkDivisionsUserData(muEntries) { return await this.users.getBulkDivisionsUserData(muEntries); }
+
 }
