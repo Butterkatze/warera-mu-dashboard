@@ -170,6 +170,21 @@ class BaseSubHandler {
                 skillpath = 'Aufbau';
             }
         }
+        //Stats für Balken
+
+        const currentHealth = this.decimalAdjust("round", apiData.skills?.health?.currentBarValue, -1) || 0;
+        const totalHealth   = apiData.skills?.health?.value || 100;
+        
+        const currentHunger = this.decimalAdjust("round", apiData.skills?.hunger?.currentBarValue, -1) || 0;
+        const totalHunger   = apiData.skills?.hunger?.value || 100;
+
+        const currentOverall = Math.round((currentHealth + currentHealth * (currentHunger * 0.15)) * 10) / 10;
+        const totalOverall   = Math.round((totalHealth + totalHealth * (totalHunger * 0.15)) * 10) / 10;
+
+        // Prozentuale Breiten für die visuelle Darstellung (0 - 100)
+        const healthPercent  = Math.min(100, Math.max(0, (currentHealth / totalHealth) * 100));
+        const hungerPercent  = Math.min(100, Math.max(0, (currentHunger / totalHunger) * 100));
+        const overallPercent = Math.min(100, Math.max(0, (currentOverall / totalOverall) * 100));
         return {
             _id: apiData._id,
             avatarUrl: apiData.avatarUrl,
@@ -182,20 +197,26 @@ class BaseSubHandler {
             skillpath: skillpath || 'Fehler',
             skills: {
                 "health": {
-                    "currentBarValue": this.decimalAdjust("round", apiData.skills?.health?.currentBarValue, -1),
-                    "value": apiData.skills?.health?.value,
+                    "currentBarValue": currentHealth,
+                    "value": totalHealth,
+                    "percent": healthPercent
                 },
                 "hunger": {
-                    "currentBarValue": this.decimalAdjust("round", apiData.skills?.hunger?.currentBarValue, -1),
-                    "value": apiData.skills?.hunger?.value,
+                    "currentBarValue": currentHunger,
+                    "value": totalHunger,
+                    "percent": hungerPercent
                 },
-
+                "overall": {
+                    "currentBarValue": currentOverall,
+                    "value": totalOverall,
+                    "percent": overallPercent
+                }
             },
             buffs:{
                 "buffCodes": apiData.buffs?.buffCodes || [],
-                "buffEndAt": apiData.buffs?.buffEndAt || null,
+                "buffEndAt": apiData.buffs?.buffEndAt ? new Date(apiData.buffs.buffEndAt) : null,
                 "debuffCodes": apiData.buffs?.debuffCodes || [],
-                "debuffEndAt": apiData.buffs?.debuffEndAt || null,
+                "debuffEndAt": apiData.buffs?.debuffEndAt ? new Date(apiData.buffs.debuffEndAt) : null,
             },
             
         };
@@ -566,6 +587,83 @@ class UserHandler extends BaseSubHandler {
             members: memberIds.map(id => zwingeUserObjekt(id, "Mitglied"))
         };
     }
+
+// ==========================================================================
+// ZUSATZ FÜR DEN UserHandler INNERHALB DER datahandler.js
+// ==========================================================================
+
+async getBulkDivisionsUserData(muEntries = []) {
+    if (!muEntries || muEntries.length === 0) return {};
+
+    const finalResultMap = {};
+    const missingUserIds = new Set();
+    const muDataMap = new Map();
+
+    // 1. Schritt: Alle MUs parallel aus dem internen MU-Cache/API auflösen
+    const muIds = muEntries.map(eintrag => eintrag.id).filter(Boolean);
+    const loadedMUs = await this.parent.mus.getMultipleMusByIds(muIds);
+
+    const extrahiereId = (item) => {
+        if (!item) return null;
+        return typeof item === 'object' ? (item._id || item.id)?.toString() : item.toString();
+    };
+
+    // 2. Schritt: IDs für alle Rollen (members, commanders, managers) sammeln
+    muEntries.forEach(eintrag => {
+        const muObjekt = loadedMUs.get(eintrag.id.toString());
+        if (!muObjekt) {
+            finalResultMap[eintrag.id] = { managers: [], commanders: [], members: [] };
+            return;
+        }
+
+        const managerIds   = (Array.isArray(muObjekt.managers)   ? muObjekt.managers   : [muObjekt.managers   || []]).flatMap(item => item ? [extrahiereId(item)] : []).filter(Boolean);
+        const commanderIds = (Array.isArray(muObjekt.commanders) ? muObjekt.commanders : [muObjekt.commanders || []]).flatMap(item => item ? [extrahiereId(item)] : []).filter(Boolean);
+        const memberIds    = (Array.isArray(muObjekt.members)    ? muObjekt.members    : [muObjekt.members    || []]).flatMap(item => item ? [extrahiereId(item)] : []).filter(Boolean);
+
+        // Zwischenspeichern für den Zuordnungsschritt
+        muDataMap.set(eintrag.id.toString(), { managerIds, commanderIds, memberIds });
+
+        // Globale Set befüllen für das User-Batching
+        managerIds.forEach(id => missingUserIds.add(id));
+        commanderIds.forEach(id => missingUserIds.add(id));
+        memberIds.forEach(id => missingUserIds.add(id));
+    });
+
+    // Flag-Codes global cachen, falls Länder requests nötig sind
+    await this.parent.countries.getInternalCountries();
+
+    // 3. Schritt: Alle gesammelten User gebündelt abfragen (nutzt intern deinen Duplikat- & Cache-Schutz)
+    const geladeneUser = await this.#getUser(Array.from(missingUserIds));
+    const userMap = new Map();
+    geladeneUser.forEach(user => {
+        if (user?._id) userMap.set(user._id.toString(), user);
+    });
+
+    const zwingeUserObjekt = (id, fallbackRolle) => {
+        const existierenderUser = userMap.get(id);
+        if (existierenderUser?.username) return existierenderUser;
+        return {
+            _id: id, username: `${fallbackRolle} (${id.substring(0, 6)})`,
+            avatarUrl: "", level: 0, isActive: false, 
+            buffs: { buffCodes: [], buffEndAt: null, debuffCodes: [], debuffEndAt: null }
+        };
+    };
+
+    // 4. Schritt: Ergebnis-Map für die Komponente passgenau zusammenbauen
+    muEntries.forEach(eintrag => {
+        const rollenIds = muDataMap.get(eintrag.id.toString());
+        if (!rollenIds) return;
+
+        finalResultMap[eintrag.id] = {
+            managers:   rollenIds.managerIds.map(id => zwingeUserObjekt(id, "Manager")),
+            commanders: rollenIds.commanderIds.map(id => zwingeUserObjekt(id, "Commander")),
+            members:    rollenIds.memberIds.map(id => zwingeUserObjekt(id, "Mitglied"))
+        };
+    });
+
+    this.forceUpdate = false;
+    return finalResultMap;
+}
 }
 
 class LayoutHandler extends BaseSubHandler {
@@ -698,10 +796,6 @@ export class DataHandler {
         }
     }
 
-    // ==========================================
-    // INTERNE HILFSMETHODEN & LEGACY-SETTER
-    // ==========================================
-
     get forceUpdate() {
         return this._forceUpdate;
     }
@@ -742,4 +836,6 @@ export class DataHandler {
     parseMarkdownToSpalten(htmlText) { return this.mus.parseMarkdownToSpalten(htmlText); }
     async getMultipleMusByIds(muIds) { return await this.mus.getMultipleMusByIds(muIds); }
     saveCustomLayout(spalten) { this.layout.saveCustomLayout(spalten); }
+    // Füge das zu den öffentlichen Schnittstellen für React am Ende der DataHandler-Klasse hinzu:
+    async getBulkDivisionsUserData(muEntries) { return await this.users.getBulkDivisionsUserData(muEntries); }
 }

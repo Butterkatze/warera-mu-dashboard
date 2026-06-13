@@ -106,68 +106,66 @@ export function UserCell({ user, isObject }) {
   export function UserStatsColumnCell({ user, isObject }) {
     if (!isObject || !user.skills) return <td className="mu-text-center"><span className="mu-no-data">-</span></td>;
   
-    // 1. Daten extrahieren
-    const currentHealth = user.skills.health?.currentBarValue || 0;
-    const totalHealth   = user.skills.health?.value || 100;
-    
-    const currentHunger = user.skills.hunger?.currentBarValue || 0;
-    const totalHunger   = user.skills.hunger?.value || 100;
-  
-    // 2. Mathematische Berechnung für den Overall-Balken
-    const currentOverall = Math.round((currentHealth + currentHealth * (currentHunger * 0.15))*10)/10 ; //Um eine Stelle nach dem Komma zu runden
-    const totalOverall   = totalHealth + totalHealth * (totalHunger * 0.15 );
-  
-    // Prozentuale Breiten für die visuelle Darstellung (0 - 100)
-    const healthPercent  = Math.min(100, Math.max(0, (currentHealth / totalHealth) * 100));
-    const hungerPercent  = Math.min(100, Math.max(0, (currentHunger / totalHunger) * 100));
-    const overallPercent = Math.min(100, Math.max(0, (currentOverall / totalOverall) * 100));
+    const health  = user.skills.health || { currentBarValue: 0, value: 100, percent: 0 };
+    const hunger  = user.skills.hunger || { currentBarValue: 0, value: 100, percent: 0 };
+    const overall = user.skills.overall || { currentBarValue: 0, value: 100, percent: 0 };
   
     return (
-      <td>
-        <div className="mu-status-bars-column">
-          {/* Overall Balken */}
-          <div className="mu-status-bar-wrapper">
-            <div className="mu-status-bar-labels">
-              <span className="mu-status-bar-name">Overall</span>
-              <span className="mu-status-bar-value">
-                {currentOverall} / {totalOverall}
-              </span>
+        <td>
+          <div className="mu-status-bars-column">
+            {/* Overall Balken */}
+            <div className="mu-status-bar-wrapper">
+              <div className="mu-status-bar-labels">
+                <span className="mu-status-bar-name">Overall</span>
+                <span className="mu-status-bar-value">
+                  {overall.currentBarValue} / {overall.value}
+                </span>
+              </div>
+              <div className="mu-status-bar-bg">
+                <div className="mu-status-bar-fill fill-overall" style={{ width: `${overall.percent}%` }}>
+                  {overall.percent >= 12 && <span className="mu-bar-percent-inside">{Math.round(overall.percent)}%</span>}
+                </div>
+              </div>
             </div>
-            <div className="mu-status-bar-bg">
-              <div className="mu-status-bar-fill fill-overall" style={{ width: `${overallPercent}%` }} />
+    
+            {/* Health Balken */}
+            <div className="mu-status-bar-wrapper">
+              <div className="mu-status-bar-labels">
+                <span className="mu-status-bar-name">Health</span>
+                <span className="mu-status-bar-value">
+                  {health.currentBarValue} / {health.value}
+                </span>
+              </div>
+              <div className="mu-status-bar-bg">
+                <div className="mu-status-bar-fill fill-health" style={{ width: `${health.percent}%` }}>
+                  {health.percent >= 12 && <span className="mu-bar-percent-inside">{Math.round(health.percent)}%</span>}
+                </div>
+              </div>
+            </div>
+    
+            {/* Hunger Balken */}
+            <div className="mu-status-bar-wrapper">
+              <div className="mu-status-bar-labels">
+                <span className="mu-status-bar-name">Hunger</span>
+                <span className="mu-status-bar-value">
+                  {hunger.currentBarValue} / {hunger.value}
+                </span>
+              </div>
+              <div className="mu-status-bar-bg">
+                <div className="mu-status-bar-fill fill-hunger" style={{ width: `${hunger.percent}%` }}>
+                  {hunger.percent >= 12 && <span className="mu-bar-percent-inside">{Math.round(hunger.percent)}%</span>}
+                </div>
+              </div>
+            </div>
+    
+            {/* Das unveränderte PillenBadge */}
+            <div className="mu-status-pill-row">
+              <PillenBadge user={user} isObject={isObject} />
             </div>
           </div>
-  
-          {/* Health Balken */}
-          <div className="mu-status-bar-wrapper">
-            <div className="mu-status-bar-labels">
-              <span className="mu-status-bar-name">Health</span>
-              <span className="mu-status-bar-value">{currentHealth} / {totalHealth}</span>
-            </div>
-            <div className="mu-status-bar-bg">
-              <div className="mu-status-bar-fill fill-health" style={{ width: `${healthPercent}%` }} />
-            </div>
-          </div>
-  
-          {/* Hunger Balken */}
-          <div className="mu-status-bar-wrapper">
-            <div className="mu-status-bar-labels">
-              <span className="mu-status-bar-name">Hunger</span>
-              <span className="mu-status-bar-value">{currentHunger} / {totalHunger}</span>
-            </div>
-            <div className="mu-status-bar-bg">
-              <div className="mu-status-bar-fill fill-hunger" style={{ width: `${hungerPercent}%` }} />
-            </div>
-          </div>
-  
-          {/* Hier rufen wir jetzt einfach dein unberührtes, altes PillenBadge auf */}
-          <div className="mu-status-pill-row">
-            <PillenBadge user={user} isObject={isObject} />
-          </div>
-        </div>
-      </td>
-    );
-  }
+        </td>
+      );
+    }
   
   // ==========================================================================
   // 3. Komponente: User- / Mitgliederliste (Unten)
