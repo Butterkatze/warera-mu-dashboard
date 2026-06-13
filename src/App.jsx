@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import './index.css';
 import Tokenhandler from './components/tokenhandler.jsx';
-import GroupedGrid from './components/groupedgrid.jsx';
+import DivisionsDashboard from './components/divisionsdashboard.jsx';
 import MuDashboard from './components/mudashboard.jsx';
 import MuEditor from './components/mueditor.jsx';
 import { DataHandler } from './components/datahandler.js';
@@ -194,9 +194,10 @@ function App() {
       isLoading && muData.length === 0 ? (
         <div className="grid-loading">Militäreinheiten werden geladen...</div>
       ) : (
-        <GroupedGrid 
+        <DivisionsDashboard 
           muData={muData} 
           onSelectMu={setSelectedMu}
+          dataHandler={dataHandler}
         />
       )
     )}

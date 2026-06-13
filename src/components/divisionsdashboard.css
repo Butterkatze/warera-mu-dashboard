@@ -1,0 +1,485 @@
+/* ==========================================================================
+   1. Globaler Dashboard-Container & Grid-Layout
+   ========================================================================== */
+
+   .divisions-dashboard-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 100%;
+  }
+  
+  /* Oberer Lade-Indikator */
+  .users-top-loading-bar {
+    background-color: #2563eb;
+    color: white;
+    font-size: 0.75rem;
+    text-align: center;
+    padding: 5px 0;
+    font-weight: 500;
+    width: 100%;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    border-radius: 4px;
+  }
+  
+  /* KORREKTUR: Steuert das Nebeneinanderstehen der Divisionen */
+.divisions-wrapper {
+  display: grid;
+  /* Definiert Spalten mit einer festen Wohlfühlbreite zwischen 340px und 400px */
+  grid-template-columns: repeat(auto-fill, minmax(340px, 400px));
+  gap: 20px; 
+  padding-bottom: 20px;
+  justify-content: start;
+  align-items: start; /* Verhindert, dass kurze Spalten vertikal gestreckt werden */
+  width: 100%;
+}
+  
+  /* ==========================================================================
+     2. Eine einzelne Divisions-Spalte
+     ========================================================================== */
+  
+    .division-column {
+    background-color: var(--color-bg-grid-column, #16161a);
+    border-radius: 8px;
+    padding: 16px;
+    border: 1px solid var(--color-border, #27272a);
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    box-sizing: border-box; /* Zwingt Padding in die Breite hinein */
+  }
+
+  /* Titel der Division (Spaltenkopf) */
+  .division-column-title {
+    color: var(--color-primary, #eab308);
+    font-size: 1.2rem;
+    text-align: center;
+    margin: 0;
+    border-bottom: 2px solid var(--color-border, #27272a);
+    padding-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  /* Container für die MUs innerhalb einer Division */
+  .division-column-items {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  /* ==========================================================================
+     3. In-Column Divisions-Statistik-Bereich (2x3 Grid & Diagramm)
+     ========================================================================== */
+  
+  .division-stats-section {
+    background-color: var(--color-bg-surface, #1e1e24);
+    border: 1px solid var(--color-border, #27272a);
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  /* 2 Spalten für die 6 Wertepillen */
+  .division-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+  }
+  
+  /* Kompakte Box für die Statistiken */
+  .division-stat-box {
+    display: flex;
+    flex-direction: column;
+    background-color: var(--color-bg-secondary, #1a1a1f);
+    border: 1px solid var(--color-border-stat-box, #2a2a32);
+    padding: 6px 8px;
+    border-radius: 4px;
+  }
+  
+  .division-stat-label {
+    font-size: 0.7rem;
+    color: var(--color-text-secondary, #a0a0ab);
+    margin-bottom: 2px;
+  }
+  
+  .division-stat-value {
+    font-size: 0.85rem;
+    color: var(--color-success, #22c55e);
+    font-weight: bold;
+  }
+  
+  /* Gold/Gelbe Hervorhebung für den 90% Timer */
+  .division-stat-box.stat-highlight {
+    border-color: #eab308; 
+    background: linear-gradient(135deg, #1a1a1f 0%, #2e2a1f 100%);
+  }
+  
+  .division-stat-box.stat-highlight .division-stat-value {
+    color: #eab308;
+  }
+  
+  /* ==========================================================================
+     4. 24h Balkendiagramm Styles
+     ========================================================================== */
+  
+  .division-chart-container {
+    background-color: var(--color-bg-secondary, #1a1a1f);
+    border: 1px solid var(--color-border-stat-box, #2a2a32);
+    border-radius: 6px;
+    padding: 10px 8px 8px 8px;
+  }
+  
+  .chart-title {
+    font-size: 0.7rem;
+    color: var(--color-text-secondary, #a0a0ab);
+    margin: 0 0 24px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-align: center;
+  }
+  
+  .mu-24h-chart {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    height: 50px; 
+    gap: 2px;
+  }
+  
+  .chart-bar-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+    position: relative;
+  }
+  
+  .chart-bar-value-label {
+    font-size: 0.55rem;
+    font-family: monospace;
+    color: #15803d; 
+    position: absolute;
+    top: -14px;
+    font-weight: bold;
+  }
+  
+  .chart-bar-bg {
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.02);
+    display: flex;
+    align-items: flex-end;
+    border-radius: 2px 2px 0 0;
+  }
+  
+  .chart-bar-fill {
+    width: 100%;
+    /* KORREKTUR: Grüner Verlauf statt Rot */
+    background: linear-gradient(180deg, #22c55e 0%, #15803d 100%);
+    border-radius: 1px 1px 0 0;
+    height: 0%;
+    transition: height 0.4s ease;
+  }
+  
+  .chart-bar-fill.has-value {
+    /* KORREKTUR: Grüner statt roter Glow-Effekt */
+    box-shadow: 0 0 4px rgba(34, 197, 94, 0.4);
+  }
+  
+  .chart-bar-hour-label {
+    font-size: 0.5rem;
+    color: var(--color-text-muted, #71717a);
+    margin-top: 4px;
+    font-family: monospace;
+  }
+  
+  .chart-header-with-info {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 20px;
+  }
+  
+  /* Überschrift-Abstand anpassen, da jetzt im Flex-Container */
+  .chart-header-with-info .chart-title {
+    margin: 0;
+  }
+  
+  /* Styling für das kleine (i) Icon */
+  .chart-info-icon {
+    font-size: 0.85rem;
+    color: var(--color-text-muted, #71717a);
+    cursor: help;
+    transition: color 0.2s ease;
+    line-height: 1;
+  }
+  
+  .chart-info-icon:hover {
+    color: var(--color-primary, #eab308); /* Wird beim Hover gold/gelb */
+  }
+  /* ==========================================================================
+     5. MU-Karten (Militäreinheiten)
+     ========================================================================== */
+  
+  .mu-card {
+    background-color: var(--color-bg-surface, #1e1e24);
+    border: 1px solid var(--color-border, #27272a);
+    border-radius: 8px;
+    padding: 10px;
+    display: flex;
+    gap: 12px; 
+    align-items: center; 
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    box-sizing: border-box;
+  }
+  
+  .mu-card-image-wrapper {
+    width: 55px;
+    height: 55px;
+    flex-shrink: 0; 
+    background-color: var(--color-input-bg, #1a1a1f);
+    border-radius: 6px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--color-border-stat-box, #2a2a32);
+  }
+  
+  .mu-card-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .mu-card-placeholder {
+    color: var(--color-text-muted, #71717a);
+    font-size: 0.7rem;
+    text-align: center;
+    padding: 2px;
+  }
+  
+  .mu-card-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0; /* Verhindert, dass Text die Karte nach rechts rausdrückt */
+  }
+  
+  .mu-card-title {
+    color: var(--color-text-primary, #ffffff);
+    margin: 0 0 6px 0;
+    font-size: 0.95rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; /* Schneidet zu lange Namen sauber mit "..." ab */
+  }
+  
+  .mu-card-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); 
+    gap: 6px; 
+    font-size: 0.75rem;
+  }
+  
+  .mu-card-stat-box {
+    display: flex;
+    justify-content: space-between;
+    background-color: var(--color-bg-stat-box, #1a1a1f); 
+    padding: 3px 6px;
+    border-radius: 4px;
+    border: 1px solid var(--color-border-stat-box, #2a2a32); 
+  }
+  
+  .mu-stat-label {
+    color: var(--color-text-secondary, #a0a0ab);
+  }
+  
+  .mu-stat-value {
+    color: var(--color-success, #22c55e);
+    font-weight: bold;
+  }
+  
+  /* Interaktionen */
+  .mu-card.clickable {
+    cursor: pointer;
+    user-select: none; 
+  }
+  
+  .mu-card.clickable:hover {
+    transform: translateY(-2px);
+    border-color: var(--color-primary-hover, #facc15);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  }
+  
+  .mu-card.clickable.active-card {
+    border-color: var(--color-primary, #eab308);
+    background-color: var(--color-bg-clickable-hover, rgba(234, 179, 8, 0.05));
+    box-shadow: 0 0 8px rgba(234, 179, 8, 0.2);
+  }
+  
+  /* Sonstige Indikatoren */
+  .divisions-loading {
+    text-align: center;
+    padding: 30px;
+    color: var(--color-text-muted, #71717a);
+    border: 1px dashed var(--color-border, #27272a);
+    border-radius: 12px;
+    font-size: 0.9rem;
+    font-style: italic;
+  }
+
+  /* ==========================================================================
+   NEU: Aggregierte Statusbalken für Divisionen
+   ========================================================================== */
+
+.division-status-bars-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 5px;
+  border-top: 1px dashed var(--color-border, #27272a);
+}
+
+.div-status-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.div-status-label {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary, #a0a0ab);
+  width: 55px; /* Feste Breite, damit die Balken links bündig starten */
+  font-weight: 500;
+}
+
+.div-status-bar-bg {
+  flex: 1;
+  height: 18px; /* Etwas dicker, damit die Schrift gut reinpasst */
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--color-border-stat-box, #2a2a32);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.div-status-bar-fill {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center; /* Zentriert die Prozentanzeige im gefüllten Teil */
+  transition: width 0.5s ease-out;
+  min-width: 24px; /* Verhindert Verschwinden der Schrift bei sehr kleinen Werten */
+}
+
+/* Farben für die einzelnen Attribute */
+.div-status-bar-fill.hunger {
+  background: linear-gradient(90deg, #f97316 0%, #ea580c 100%); /* Orange */
+}
+
+.div-status-bar-fill.health {
+  background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%); /* Rot */
+}
+
+.div-status-bar-fill.overall {
+  background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%); /* Blau */
+}
+
+/* Prozentanzeige IN dem Balken */
+.div-status-percent-inside {
+  font-size: 0.65rem;
+  color: #ffffff;
+  font-weight: bold;
+  font-family: monospace;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8); /* Macht Text auf hellem Grund lesbar */
+  pointer-events: none; /* Verhindert Text-Markierungs-Interaktionen */
+}
+
+/* ==========================================================================
+   NEU: Styles für den Einklapp-Button und Abstände
+   ========================================================================== */
+
+.mu-toggle-dashboard-details-btn {
+  width: 100%;
+  margin-top: 10px;
+  padding: 8px;
+  background-color: var(--color-bg-secondary, #1a1a1f);
+  border: 1px solid var(--color-border, #27272a);
+  border-radius: 4px;
+  color: var(--color-text-secondary, #a0a0ab);
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.mu-toggle-dashboard-details-btn:hover {
+  background-color: var(--color-bg-grid-column, #16161a);
+  color: var(--color-text-primary, #ffffff);
+  border-color: var(--color-text-muted, #71717a);
+}
+
+.mu-toggle-dashboard-details-btn.expanded {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+  opacity: 0.9; /* Optional: Macht den Rahmen etwas dezenter, falls er zu knallig ist */
+  background: linear-gradient(135deg, var(--color-bg-secondary, #1a1a1f) 0%, rgba(0, 0, 0, 0.4) 100%);
+}
+
+/* Container für die aufgeklappten Elemente */
+.division-expanded-details-wrapper {
+  margin-top: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+/* Spezifische Abstände innerhalb der Sektionen */
+.division-expanded-details-wrapper .section-spacing {
+  margin-bottom: 0; /* Nutzt das flex-gap des Wrappers */
+}
+
+.bar-header-spacing {
+  margin-bottom: 10px !important;
+}
+
+/* Spezifisches Grün für die Buff-Balken im Chart */
+.chart-bar-fill.buff-fill {
+  background: linear-gradient(180deg, #22c55e 0%, #16a34a 100%);
+}
+
+.chart-bar-fill.buff-fill.has-value {
+  box-shadow: 0 0 5px rgba(34, 197, 94, 0.5);
+}
+/* Erweitere deinen bestehenden Eintrag um position: relative */
+.division-stats-section {
+  position: relative; /* Zwingend erforderlich für die absolute Positionierung des Icons */
+  background-color: var(--color-bg-surface, #1e1e24);
+  border: 1px solid var(--color-border, #27272a);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Das neue Icon oben rechts */
+.global-stats-info {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  font-size: 0.85rem;
+  z-index: 2;
+}
