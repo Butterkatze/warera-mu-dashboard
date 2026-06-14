@@ -123,7 +123,6 @@ export function UserCell({ user, isObject }) {
               </div>
               <div className="mu-status-bar-bg">
                 <div className="mu-status-bar-fill fill-overall" style={{ width: `${overall.percent}%` }}>
-                  {overall.percent >= 12 && <span className="mu-bar-percent-inside">{Math.round(overall.percent)}%</span>}
                 </div>
               </div>
             </div>
@@ -138,7 +137,6 @@ export function UserCell({ user, isObject }) {
               </div>
               <div className="mu-status-bar-bg">
                 <div className="mu-status-bar-fill fill-health" style={{ width: `${health.percent}%` }}>
-                  {health.percent >= 12 && <span className="mu-bar-percent-inside">{Math.round(health.percent)}%</span>}
                 </div>
               </div>
             </div>
@@ -153,7 +151,6 @@ export function UserCell({ user, isObject }) {
               </div>
               <div className="mu-status-bar-bg">
                 <div className="mu-status-bar-fill fill-hunger" style={{ width: `${hunger.percent}%` }}>
-                  {hunger.percent >= 12 && <span className="mu-bar-percent-inside">{Math.round(hunger.percent)}%</span>}
                 </div>
               </div>
             </div>
@@ -262,6 +259,19 @@ export function UserCell({ user, isObject }) {
                     </div>
                   </th>
                   */}
+                  <th className="mu-text-center select-column-header">
+                    <div className="th-content-wrapper">
+                      Chat-Ping
+                      <div className="mu-tooltip-container">
+                        <span className="mu-info-btn">i</span>
+                        <div className="mu-tooltip-text">
+                          Text für Pings<br /> 
+                          Strg um Zeilen auszuwählen<br /> 
+                          Mit Strg + Shift zwei Zeilen in einer Bewegung auswählen, um die ganze Spalte auszuwählen.
+                        </div>
+                      </div>
+                    </div>
+                  </th>
                   <th onClick={() => requestSort('buffs')} className="sortable-header">
                     <div className="th-content-wrapper">
                       Helath und Hunger {renderSortArrow('buffs')}
@@ -305,7 +315,7 @@ export function UserCell({ user, isObject }) {
                       </div>
                     </div>
                   </th>
-                  {/*                  */}
+                  {/*                  
                   <th onClick={() => requestSort('level')} className="sortable-header">
                     <div className="th-content-wrapper">
                       Userlevel {renderSortArrow('level')}
@@ -315,23 +325,26 @@ export function UserCell({ user, isObject }) {
                       </div>
                     </div>
                   </th>
+                  */}
                 </tr>
               </thead>
               <tbody>
                 {sortedList.map((user, idx) => {
                   const isObject = typeof user === 'object';
-                  const userRank = isObject && user.level ? `Level ${user.level}` : 'Mitglied';
-                  {/*
-                  const weeklyDamage = isObject && user.weeklyUserDamages ? user.weeklyUserDamages.toLocaleString('de-DE') : '0';
-                  */}
+                  //const userRank = isObject && user.level ? `Level ${user.level}` : 'Mitglied';
+                  const userId = isObject ? user._id : user; 
+
                   return (
-                    <tr key={user._id || idx}>
-                        {/* Das Mapping ist jetzt extrem übersichtlich und komponentenorientiert */}
+                    // BEHOBEN: Nutzt jetzt userId statt user._id, damit es bei Strings nicht kracht
+                    <tr key={userId || idx}>
                         <UserCell user={user} isObject={isObject} />
                         {/*
                         <td>{weeklyDamage}</td>
                         
                         */}
+                        <td className="mu-text-center mu-chat-ping-cell">
+                          @{userId}
+                        </td>
                         <UserStatsColumnCell user={user} isObject={isObject} />
                         <td className="mu-text-center">
                             <OnlineBadge user={user} isObject={isObject} serverTime={currentTime} />
@@ -339,9 +352,11 @@ export function UserCell({ user, isObject }) {
                         <td className="mu-text-center">
                             <SkillpathBadge user={user} isObject={isObject} />
                         </td>
+                        {/*
                         <td className="mu-text-center">
                             {userRank}
                         </td>
+                        */}
                     </tr>
                   );
                 })}

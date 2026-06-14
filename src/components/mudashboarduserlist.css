@@ -5,8 +5,8 @@
    .mu-user-table-wrapper {
     border: 1px solid var(--color-border-stat-box);
     border-radius: 6px;
-    overflow: visible; /* Erlaubt Tooltips, nach oben herauszuragen */
-  }
+    overflow: visible; /* Geändert von visible auf auto, damit die Tabelle eine klare Grenze hat */
+   }
   
   .mu-user-table {
     width: 100%;
@@ -337,3 +337,36 @@
     font-size: 0.7rem;
     padding: 2px 8px;
   }
+
+
+/* ==========================================================================
+   Chat-Ping Spalten-Styling für selektives Kopieren
+   ========================================================================== */
+
+   /* Deaktiviert die Textauswahl für alle unbeteiligten Zellen komplett */
+.mu-user-table td:not(.mu-chat-ping-cell),
+.mu-user-table th:not(.select-column-header) {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Aktiviert die exklusive, isolierte Auswahl für die Ping-Zelle */
+.mu-chat-ping-cell {
+  font-family: monospace;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary, #a0a0ab);
+  white-space: nowrap;
+  
+  /* Erzwingt, dass die Zelle als reiner Textblock agiert */
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  cursor: text;
+}
+
+/* Erlaubt dem Header die Interaktion ohne Störung des Ziehflusses */
+.select-column-header {
+  color: var(--color-text-secondary, #a0a0ab);
+  font-size: 0.75rem;
+  letter-spacing: 0.5px;
+  user-select: none;
+}
