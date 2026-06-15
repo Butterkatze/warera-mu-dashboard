@@ -16,7 +16,7 @@ function App() {
 
   const [showTokenPopup, setShowTokenPopup] = useState(dataHandler.apiKey === FAKE_KEY);
   
-
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedMu, setSelectedMu] = useState(null);
@@ -86,9 +86,10 @@ function App() {
       try {
         console.log("Event-gesteuertes Laden für ID:", targetId);
         dataHandler.setForceUpdate(forceUpdate); 
-        
         const data = await dataHandler.getMUFromArticle();
         setMuData(data);
+        if(muData.length === 0 && !isEditorOpen){
+        setIsRefreshing(forceUpdate)}
       } catch (error) {
         console.error("Fehler beim Laden:", error);
       } finally {
@@ -198,6 +199,8 @@ function App() {
           muData={muData} 
           onSelectMu={setSelectedMu}
           dataHandler={dataHandler}
+          manualrefresh={isRefreshing}
+          onRefreshComplete={() => setIsRefreshing(false)}
         />
       )
     )}

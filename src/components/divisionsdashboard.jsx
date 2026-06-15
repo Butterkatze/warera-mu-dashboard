@@ -362,7 +362,7 @@ function DivisionColumn({ divisionsName, muEintraege, selectedDivision, onMuClic
 // ==========================================================================
 // 3. Hauptkomponente: Das Dashboard (Orchestriert das Nachladen der User)
 // ==========================================================================
-export default function DivisionsDashboard({ muData = [], onSelectMu, dataHandler }) {
+export default function DivisionsDashboard({ muData = [], onSelectMu, dataHandler, manualrefresh, onRefreshComplete }) {
   const [selectedDivision, setSelectedDivision] = useState(null);
  
   const [allDivisionsUsers, setAllDivisionsUsers] = useState({});
@@ -374,17 +374,24 @@ useEffect(() => {
   async function loadAllUsers() {
     setLoadingUsers(true);
     try {
+      if (manualrefresh){
+        dataHandler.setForceUpdate(true);
+      }
       const bulkUserData = await dataHandler.getBulkDivisionsUserData(muData);
       setAllDivisionsUsers(bulkUserData);
     } catch (err) {
       console.error("Fehler beim gebündelten Laden der Divisions-User:", err);
     } finally {
       setLoadingUsers(false);
+      if (manualrefresh) {
+        dataHandler.setForceUpdate(false);
+        onRefreshComplete();
+      }
     }
   }
 
   loadAllUsers();
-}, [muData, dataHandler]);
+}, [muData, dataHandler, manualrefresh, onRefreshComplete]);
 
   if (!muData || muData.length === 0) {
     return <div className="divisions-loading">Militäreinheiten werden geladen...</div>;
