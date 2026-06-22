@@ -14,7 +14,7 @@ const DEFAULT_ARTICLE_ID = '6a1f025b37df43a8d01bb9a2';
 function App() {
   const dataHandler = useMemo(() => new DataHandler(DEFAULT_ARTICLE_ID), []);
 
-  const [showTokenPopup, setShowTokenPopup] = useState(dataHandler.apiKey === FAKE_KEY);
+  const [showTokenPopup, setShowTokenPopup] = useState(dataHandler.apiKey !== FAKE_KEY);
   
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
