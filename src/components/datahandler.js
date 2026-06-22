@@ -694,9 +694,10 @@ export class DataHandler {
 
         this._forceUpdate = forceUpdate;
         this.DEFAULT_ARTICLE_ID = defaultArticleId;
+        this._got_key = true
 
         // Initiale Werte sicher laden
-        this._apiKey = this._safeGetLocalStorage('warera_api_key', 'get_rickrolled');
+        this._apiKey = this. _getApiKey('warera_api_key');
         this._currentArticleId = this._safeGetLocalStorage('warera_article_id', defaultArticleId) || defaultArticleId;
 
         // API-Client initialisieren
@@ -741,13 +742,16 @@ export class DataHandler {
     // GETTER (Öffentlicher Lesezugriff)
     // ==========================================
     get apiKey() {
-        return this._apiKey;
+        return this._apiKey
     }
 
     get currentArticleId() {
         return this._currentArticleId;
     }
 
+    get got_key(){
+     return this._got_key
+    }
     // ==========================================
     // SEPARATE SPEICHER- & LÖSCHMETHODEN
     // ==========================================
@@ -758,6 +762,7 @@ export class DataHandler {
             const finalKey = newKey.trim();
             localStorage.setItem('warera_api_key', finalKey);
             this._apiKey = finalKey;
+            this._got_key = true
             this.updateClient(); // Client neu bauen, da sich die Rechte geändert haben
         } catch (error) {
             console.error("Fehler beim Speichern des API-Keys:", error);
@@ -824,6 +829,14 @@ export class DataHandler {
             console.error(`Fehler beim sicheren Lesen von ${key} aus dem LocalStorage:`, error);
             return defaultValue;
         }
+    }
+
+    _getApiKey(key){
+        const item = localStorage.getItem(key);
+        if (item === null){
+            this._got_key = false
+            return ''
+        } 
     }
 
     // Öffentliche Schnittstellen für React
