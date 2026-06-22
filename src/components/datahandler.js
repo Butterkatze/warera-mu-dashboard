@@ -158,7 +158,7 @@ class BaseSubHandler {
                                             
             const userLevel = apiData.leveling?.level || 0;
             
-            if (userLevel > 20) { 
+            if (userLevel >= 20) { 
                 if (warSkillPathPoints > (totalSkillPathPoints * 0.75)) {
                     skillpath = 'War';
                 } else if (ecoSkillPathPoints > (totalSkillPathPoints * 0.75)) {
