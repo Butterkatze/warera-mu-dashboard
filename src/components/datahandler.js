@@ -696,7 +696,7 @@ export class DataHandler {
         this.DEFAULT_ARTICLE_ID = defaultArticleId;
 
         // Initiale Werte sicher laden
-        this._apiKey = this._safeGetLocalStorage('warera_api_key', '');
+        this._apiKey = this._safeGetLocalStorage('warera_api_key', 'get_rickrolled');
         this._currentArticleId = this._safeGetLocalStorage('warera_article_id', defaultArticleId) || defaultArticleId;
 
         // API-Client initialisieren
